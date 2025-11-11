@@ -1,11 +1,19 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Phone, Mail, MapPin, Award, Shield, Target, Users, Building2, Wrench, TrendingUp, Globe, CheckCircle, Factory, Briefcase, HardHat, Zap, Clock, Star, ArrowRight, ChevronDown, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import Hero from '@/component/about-component/Hero';
+import CompanyOverview from '@/component/about-component/CompanyOverview';
+import Mission from '@/component/about-component/Mission';
+import CoreCapabilities from '@/component/about-component/CoreCapabilities';
+import Certifications from '@/component/about-component/Certifications';
+import Industry from '@/component/about-component/Industry';
+import WhyChooseUs from '@/component/home-component/WhyChooseUs';
+import CallToAction from '@/component/home-component/CallToAction';
 
 const RawasyAboutPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('mission');
+  // const [activeTab, setActiveTab] = useState('mission');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,7 +30,7 @@ const RawasyAboutPage = () => {
 
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      {/* <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-[#0b1d34]">
           <div className="absolute inset-0 opacity-10">
             <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
@@ -52,10 +60,10 @@ const RawasyAboutPage = () => {
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <ChevronDown className="text-white/50" size={32} />
         </div>
-      </section>
-
+      </section> */}
+      <Hero />
       {/* Company Overview */}
-      <section className="py-24 bg-white">
+      {/* <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-8">
@@ -120,10 +128,10 @@ const RawasyAboutPage = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <CompanyOverview />
       {/* Mission, Vision, Values */}
-      <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+      {/* <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Our Foundation</span>
@@ -217,10 +225,10 @@ const RawasyAboutPage = () => {
             )}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Mission />
       {/* Core Capabilities */}
-      <section className="py-24 bg-white">
+      {/* <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">What We Do</span>
@@ -298,10 +306,10 @@ const RawasyAboutPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <CoreCapabilities />
       {/* Certifications & Accreditations */}
-      <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+      {/* <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Quality & Compliance</span>
@@ -372,10 +380,10 @@ const RawasyAboutPage = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Certifications />
       {/* Industry Sectors */}
-      <section className="py-24 bg-white">
+      {/* <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Where We Work</span>
@@ -440,10 +448,10 @@ const RawasyAboutPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Industry />
       {/* Why Choose RAWASY */}
-      <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+      {/* <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Competitive Advantages</span>
@@ -513,10 +521,10 @@ const RawasyAboutPage = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <WhyChooseUs />
       {/* Call to Action */}
-      <section className="py-24  bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-[#0b1d34] relative overflow-hidden">
+      {/* <section className="py-24  bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-[#0b1d34] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
         </div>
@@ -558,8 +566,8 @@ const RawasyAboutPage = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <CallToAction />
 
 
       <style jsx>{`

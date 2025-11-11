@@ -6,6 +6,14 @@ import {
   Hammer, Lightbulb, Settings, Package, Truck, ClipboardCheck,
   PenTool, Cpu, Sparkles, TrendingUp, Clock, Globe, Phone, Mail
 } from 'lucide-react';
+import Hero from '@/component/Services/Hero';
+import MainServices from '@/component/Services/MainServices';
+import AditionalServices from '@/component/Services/AditionalServices';
+import IndustriesServed from '@/component/Services/IndustriesServed';
+import WhyChooseUs from '@/component/home-component/WhyChooseUs';
+import CallToAction from '@/component/home-component/CallToAction';
+import Contact from '@/component/Services/Contact';
+import Certifications from '@/component/Services/Certifications';
 
 const ServicesPage = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -33,284 +41,284 @@ const ServicesPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const mainServices = [
-    {
-      id: 'general-contracting',
-      icon: Building2,
-      title: "General Contracting",
-      tagline: "Building Excellence, Delivering Quality",
-      description: "As a Grade 1 licensed general contractor, RAWASY delivers comprehensive construction solutions for projects of any scale and complexity across the Gulf region.",
-      color: "from-[#f1601f] to-[#7f3e2c]",
-      image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Building2,
-          title: "Commercial Construction",
-          desc: "Office buildings, retail spaces, shopping malls, and mixed-use developments"
-        },
-        {
-          icon: Factory,
-          title: "Industrial Facilities",
-          desc: "Manufacturing plants, warehouses, distribution centers, and processing facilities"
-        },
-        {
-          icon: Hammer,
-          title: "Infrastructure Projects",
-          desc: "Roads, bridges, utilities, and civil engineering works"
-        },
-        {
-          icon: Target,
-          title: "Turnkey Solutions",
-          desc: "Complete project delivery from design to handover with single-point responsibility"
-        }
-      ],
-      features: [
-        "Grade 1 Contractor License",
-        "ISO 9001:2015 Quality Management",
-        "Advanced Project Management",
-        "Value Engineering Solutions",
-        "BIM Implementation",
-        "Safety Excellence (OHSAS 18001)"
-      ]
-    },
-    {
-      id: 'civil-mep',
-      icon: Settings,
-      title: "Civil & MEP Works",
-      tagline: "Engineering Solutions for Modern Infrastructure",
-      description: "Comprehensive mechanical, electrical, and plumbing installations combined with civil engineering expertise to create fully integrated building systems.",
-      color: "from-[#0b1d34] to-[#13344c]",
-      image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Zap,
-          title: "Electrical Systems",
-          desc: "Complete power distribution, lighting systems, and automation controls"
-        },
-        {
-          icon: Settings,
-          title: "Mechanical Systems",
-          desc: "HVAC installations, ventilation, and climate control solutions"
-        },
-        {
-          icon: Wrench,
-          title: "Plumbing & Drainage",
-          desc: "Water supply networks, sanitary systems, and drainage infrastructure"
-        },
-        {
-          icon: Shield,
-          title: "Fire Protection",
-          desc: "Fire detection, suppression systems, and emergency safety installations"
-        }
-      ],
-      features: [
-        "Certified MEP Engineers",
-        "Energy-Efficient Designs",
-        "Preventive Maintenance Plans",
-        "24/7 Emergency Support",
-        "Smart Building Integration",
-        "Code Compliance Assurance"
-      ]
-    },
-    {
-      id: 'manpower',
-      icon: Users,
-      title: "Manpower Supply",
-      tagline: "Skilled Workforce, Delivered On-Demand",
-      description: "Access to over 2000 highly trained and certified professionals across all construction disciplines, ready for immediate deployment to your projects.",
-      color: "from-[#f1601f] to-[#d95417]",
-      image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Users,
-          title: "Engineering Staff",
-          desc: "Civil, mechanical, electrical engineers and project managers"
-        },
-        {
-          icon: HardHat,
-          title: "Skilled Tradesmen",
-          desc: "Welders, fabricators, fitters, electricians, and plumbers"
-        },
-        {
-          icon: Cpu,
-          title: "Technical Specialists",
-          desc: "CAD operators, QA/QC inspectors, safety officers, and supervisors"
-        },
-        {
-          icon: ClipboardCheck,
-          title: "Support Staff",
-          desc: "Administrative, logistics, and operational support personnel"
-        }
-      ],
-      features: [
-        "2000+ Trained Professionals",
-        "Multi-Disciplinary Expertise",
-        "Flexible Deployment Models",
-        "Certified & Licensed",
-        "Immediate Availability",
-        "Performance Guaranteed"
-      ]
-    },
-    {
-      id: 'maintenance',
-      icon: Wrench,
-      title: "Maintenance Services",
-      tagline: "Preserving Performance, Extending Life",
-      description: "Comprehensive facility maintenance and asset management solutions ensuring optimal performance, longevity, and minimal downtime for your infrastructure.",
-      color: "from-[#13344c] to-[#0b1d34]",
-      image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Clock,
-          title: "Preventive Maintenance",
-          desc: "Scheduled inspections, servicing, and replacements to prevent failures"
-        },
-        {
-          icon: Zap,
-          title: "Corrective Repairs",
-          desc: "Fast response emergency repairs and breakdown maintenance"
-        },
-        {
-          icon: Target,
-          title: "Facility Management",
-          desc: "Complete building operations, utilities management, and housekeeping"
-        },
-        {
-          icon: TrendingUp,
-          title: "Asset Optimization",
-          desc: "Performance monitoring, lifecycle management, and upgrade planning"
-        }
-      ],
-      features: [
-        "24/7 Emergency Response",
-        "Computerized Maintenance Management",
-        "Energy Efficiency Audits",
-        "Spare Parts Management",
-        "Predictive Analytics",
-        "Long-term Contracts Available"
-      ]
-    },
-    {
-      id: 'trading',
-      icon: Package,
-      title: "Trading & Supply",
-      tagline: "Quality Materials, Reliable Delivery",
-      description: "Comprehensive supply of premium construction materials, equipment, and industrial products sourced from trusted global manufacturers and suppliers.",
-      color: "from-[#7f3e2c] to-[#7f8994]",
-      image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Package,
-          title: "Construction Materials",
-          desc: "Steel, cement, aggregates, finishing materials, and building supplies"
-        },
-        {
-          icon: Truck,
-          title: "Heavy Equipment",
-          desc: "Machinery sales, rentals, and procurement services"
-        },
-        {
-          icon: Shield,
-          title: "Safety Equipment",
-          desc: "PPE, safety gear, and site protection materials"
-        },
-        {
-          icon: Lightbulb,
-          title: "Technical Supplies",
-          desc: "Tools, consumables, and specialized construction products"
-        }
-      ],
-      features: [
-        "Global Supplier Network",
-        "Quality Certified Materials",
-        "Competitive Pricing",
-        "Just-in-Time Delivery",
-        "Technical Support",
-        "Bulk Order Discounts"
-      ]
-    },
-    {
-      id: 'metal-fabrication',
-      icon: Factory,
-      title: "Metal Fabrication",
-      tagline: "Precision Engineering, Superior Craftsmanship",
-      description: "State-of-the-art metal fabrication services with advanced CNC machinery, laser cutting technology, and expert craftsmanship for complex industrial applications.",
-      color: "from-[#a6adb5] to-[#7f8994]",
-      image: "https://images.unsplash.com/photo-1565717791661-a8d9edab7c8c?w=1200&h=800&fit=crop",
-      capabilities: [
-        {
-          icon: Zap,
-          title: "Laser Cutting & Engraving",
-          desc: "High-precision cutting and engraving for metal sheets and profiles"
-        },
-        {
-          icon: Settings,
-          title: "CNC Bending & Forming",
-          desc: "Advanced bending, rolling, and forming of metal components"
-        },
-        {
-          icon: Factory,
-          title: "Steel Structures",
-          desc: "Manufacturing of structural steel, trusses, and frameworks"
-        },
-        {
-          icon: Hammer,
-          title: "Custom Fabrication",
-          desc: "Bespoke metalwork for architectural and industrial applications"
-        }
-      ],
-      features: [
-        "Advanced CNC Machinery",
-        "Laser Cutting Technology",
-        "Certified Welders",
-        "Quality Testing Lab",
-        "Custom Design Support",
-        "Fast Turnaround Times"
-      ]
-    }
-  ];
+  // const mainServices = [
+  //   {
+  //     id: 'general-contracting',
+  //     icon: Building2,
+  //     title: "General Contracting",
+  //     tagline: "Building Excellence, Delivering Quality",
+  //     description: "As a Grade 1 licensed general contractor, RAWASY delivers comprehensive construction solutions for projects of any scale and complexity across the Gulf region.",
+  //     color: "from-[#f1601f] to-[#7f3e2c]",
+  //     image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Building2,
+  //         title: "Commercial Construction",
+  //         desc: "Office buildings, retail spaces, shopping malls, and mixed-use developments"
+  //       },
+  //       {
+  //         icon: Factory,
+  //         title: "Industrial Facilities",
+  //         desc: "Manufacturing plants, warehouses, distribution centers, and processing facilities"
+  //       },
+  //       {
+  //         icon: Hammer,
+  //         title: "Infrastructure Projects",
+  //         desc: "Roads, bridges, utilities, and civil engineering works"
+  //       },
+  //       {
+  //         icon: Target,
+  //         title: "Turnkey Solutions",
+  //         desc: "Complete project delivery from design to handover with single-point responsibility"
+  //       }
+  //     ],
+  //     features: [
+  //       "Grade 1 Contractor License",
+  //       "ISO 9001:2015 Quality Management",
+  //       "Advanced Project Management",
+  //       "Value Engineering Solutions",
+  //       "BIM Implementation",
+  //       "Safety Excellence (OHSAS 18001)"
+  //     ]
+  //   },
+  //   {
+  //     id: 'civil-mep',
+  //     icon: Settings,
+  //     title: "Civil & MEP Works",
+  //     tagline: "Engineering Solutions for Modern Infrastructure",
+  //     description: "Comprehensive mechanical, electrical, and plumbing installations combined with civil engineering expertise to create fully integrated building systems.",
+  //     color: "from-[#0b1d34] to-[#13344c]",
+  //     image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Zap,
+  //         title: "Electrical Systems",
+  //         desc: "Complete power distribution, lighting systems, and automation controls"
+  //       },
+  //       {
+  //         icon: Settings,
+  //         title: "Mechanical Systems",
+  //         desc: "HVAC installations, ventilation, and climate control solutions"
+  //       },
+  //       {
+  //         icon: Wrench,
+  //         title: "Plumbing & Drainage",
+  //         desc: "Water supply networks, sanitary systems, and drainage infrastructure"
+  //       },
+  //       {
+  //         icon: Shield,
+  //         title: "Fire Protection",
+  //         desc: "Fire detection, suppression systems, and emergency safety installations"
+  //       }
+  //     ],
+  //     features: [
+  //       "Certified MEP Engineers",
+  //       "Energy-Efficient Designs",
+  //       "Preventive Maintenance Plans",
+  //       "24/7 Emergency Support",
+  //       "Smart Building Integration",
+  //       "Code Compliance Assurance"
+  //     ]
+  //   },
+  //   {
+  //     id: 'manpower',
+  //     icon: Users,
+  //     title: "Manpower Supply",
+  //     tagline: "Skilled Workforce, Delivered On-Demand",
+  //     description: "Access to over 2000 highly trained and certified professionals across all construction disciplines, ready for immediate deployment to your projects.",
+  //     color: "from-[#f1601f] to-[#d95417]",
+  //     image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Users,
+  //         title: "Engineering Staff",
+  //         desc: "Civil, mechanical, electrical engineers and project managers"
+  //       },
+  //       {
+  //         icon: HardHat,
+  //         title: "Skilled Tradesmen",
+  //         desc: "Welders, fabricators, fitters, electricians, and plumbers"
+  //       },
+  //       {
+  //         icon: Cpu,
+  //         title: "Technical Specialists",
+  //         desc: "CAD operators, QA/QC inspectors, safety officers, and supervisors"
+  //       },
+  //       {
+  //         icon: ClipboardCheck,
+  //         title: "Support Staff",
+  //         desc: "Administrative, logistics, and operational support personnel"
+  //       }
+  //     ],
+  //     features: [
+  //       "2000+ Trained Professionals",
+  //       "Multi-Disciplinary Expertise",
+  //       "Flexible Deployment Models",
+  //       "Certified & Licensed",
+  //       "Immediate Availability",
+  //       "Performance Guaranteed"
+  //     ]
+  //   },
+  //   {
+  //     id: 'maintenance',
+  //     icon: Wrench,
+  //     title: "Maintenance Services",
+  //     tagline: "Preserving Performance, Extending Life",
+  //     description: "Comprehensive facility maintenance and asset management solutions ensuring optimal performance, longevity, and minimal downtime for your infrastructure.",
+  //     color: "from-[#13344c] to-[#0b1d34]",
+  //     image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Clock,
+  //         title: "Preventive Maintenance",
+  //         desc: "Scheduled inspections, servicing, and replacements to prevent failures"
+  //       },
+  //       {
+  //         icon: Zap,
+  //         title: "Corrective Repairs",
+  //         desc: "Fast response emergency repairs and breakdown maintenance"
+  //       },
+  //       {
+  //         icon: Target,
+  //         title: "Facility Management",
+  //         desc: "Complete building operations, utilities management, and housekeeping"
+  //       },
+  //       {
+  //         icon: TrendingUp,
+  //         title: "Asset Optimization",
+  //         desc: "Performance monitoring, lifecycle management, and upgrade planning"
+  //       }
+  //     ],
+  //     features: [
+  //       "24/7 Emergency Response",
+  //       "Computerized Maintenance Management",
+  //       "Energy Efficiency Audits",
+  //       "Spare Parts Management",
+  //       "Predictive Analytics",
+  //       "Long-term Contracts Available"
+  //     ]
+  //   },
+  //   {
+  //     id: 'trading',
+  //     icon: Package,
+  //     title: "Trading & Supply",
+  //     tagline: "Quality Materials, Reliable Delivery",
+  //     description: "Comprehensive supply of premium construction materials, equipment, and industrial products sourced from trusted global manufacturers and suppliers.",
+  //     color: "from-[#7f3e2c] to-[#7f8994]",
+  //     image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Package,
+  //         title: "Construction Materials",
+  //         desc: "Steel, cement, aggregates, finishing materials, and building supplies"
+  //       },
+  //       {
+  //         icon: Truck,
+  //         title: "Heavy Equipment",
+  //         desc: "Machinery sales, rentals, and procurement services"
+  //       },
+  //       {
+  //         icon: Shield,
+  //         title: "Safety Equipment",
+  //         desc: "PPE, safety gear, and site protection materials"
+  //       },
+  //       {
+  //         icon: Lightbulb,
+  //         title: "Technical Supplies",
+  //         desc: "Tools, consumables, and specialized construction products"
+  //       }
+  //     ],
+  //     features: [
+  //       "Global Supplier Network",
+  //       "Quality Certified Materials",
+  //       "Competitive Pricing",
+  //       "Just-in-Time Delivery",
+  //       "Technical Support",
+  //       "Bulk Order Discounts"
+  //     ]
+  //   },
+  //   {
+  //     id: 'metal-fabrication',
+  //     icon: Factory,
+  //     title: "Metal Fabrication",
+  //     tagline: "Precision Engineering, Superior Craftsmanship",
+  //     description: "State-of-the-art metal fabrication services with advanced CNC machinery, laser cutting technology, and expert craftsmanship for complex industrial applications.",
+  //     color: "from-[#a6adb5] to-[#7f8994]",
+  //     image: "https://images.unsplash.com/photo-1565717791661-a8d9edab7c8c?w=1200&h=800&fit=crop",
+  //     capabilities: [
+  //       {
+  //         icon: Zap,
+  //         title: "Laser Cutting & Engraving",
+  //         desc: "High-precision cutting and engraving for metal sheets and profiles"
+  //       },
+  //       {
+  //         icon: Settings,
+  //         title: "CNC Bending & Forming",
+  //         desc: "Advanced bending, rolling, and forming of metal components"
+  //       },
+  //       {
+  //         icon: Factory,
+  //         title: "Steel Structures",
+  //         desc: "Manufacturing of structural steel, trusses, and frameworks"
+  //       },
+  //       {
+  //         icon: Hammer,
+  //         title: "Custom Fabrication",
+  //         desc: "Bespoke metalwork for architectural and industrial applications"
+  //       }
+  //     ],
+  //     features: [
+  //       "Advanced CNC Machinery",
+  //       "Laser Cutting Technology",
+  //       "Certified Welders",
+  //       "Quality Testing Lab",
+  //       "Custom Design Support",
+  //       "Fast Turnaround Times"
+  //     ]
+  //   }
+  // ];
 
-  const additionalServices = [
-    {
-      icon: HardHat,
-      title: "Scaffolding & Formwork",
-      desc: "Complete scaffolding systems, formwork solutions, and temporary structures for construction projects"
-    },
-    {
-      icon: Shield,
-      title: "Safety Management",
-      desc: "Comprehensive HSE services, safety training, and risk assessment programs"
-    },
-    {
-      icon: PenTool,
-      title: "Design & Engineering",
-      desc: "Architectural design, structural engineering, and technical consultancy services"
-    },
-    {
-      icon: ClipboardCheck,
-      title: "Quality Assurance",
-      desc: "Independent QA/QC inspections, testing, and certification services"
-    },
-    {
-      icon: Truck,
-      title: "Logistics Support",
-      desc: "Project logistics, material handling, and equipment transportation services"
-    },
-    {
-      icon: Globe,
-      title: "Project Management",
-      desc: "Professional project management, planning, and coordination services"
-    }
-  ];
+  // const additionalServices = [
+  //   {
+  //     icon: HardHat,
+  //     title: "Scaffolding & Formwork",
+  //     desc: "Complete scaffolding systems, formwork solutions, and temporary structures for construction projects"
+  //   },
+  //   {
+  //     icon: Shield,
+  //     title: "Safety Management",
+  //     desc: "Comprehensive HSE services, safety training, and risk assessment programs"
+  //   },
+  //   {
+  //     icon: PenTool,
+  //     title: "Design & Engineering",
+  //     desc: "Architectural design, structural engineering, and technical consultancy services"
+  //   },
+  //   {
+  //     icon: ClipboardCheck,
+  //     title: "Quality Assurance",
+  //     desc: "Independent QA/QC inspections, testing, and certification services"
+  //   },
+  //   {
+  //     icon: Truck,
+  //     title: "Logistics Support",
+  //     desc: "Project logistics, material handling, and equipment transportation services"
+  //   },
+  //   {
+  //     icon: Globe,
+  //     title: "Project Management",
+  //     desc: "Professional project management, planning, and coordination services"
+  //   }
+  // ];
 
-  const industries = [
-    { name: "Oil & Gas", icon: Factory, projects: "150+", color: "from-orange-500 to-red-600" },
-    { name: "Infrastructure", icon: Building2, projects: "200+", color: "from-blue-900 to-blue-700" },
-    { name: "Commercial", icon: Briefcase, projects: "250+", color: "from-[#f1601f] to-[#7f3e2c]" },
-    { name: "Industrial", icon: Settings, projects: "180+", color: "from-slate-700 to-slate-900" },
-    { name: "Residential", icon: Building2, projects: "120+", color: "from-[#13344c] to-[#0b1d34]" },
-    { name: "Healthcare", icon: Shield, projects: "90+", color: "from-[#7f3e2c] to-[#7f8994]" }
-  ];
+  // const industries = [
+  //   { name: "Oil & Gas", icon: Factory, projects: "150+", color: "from-orange-500 to-red-600" },
+  //   { name: "Infrastructure", icon: Building2, projects: "200+", color: "from-blue-900 to-blue-700" },
+  //   { name: "Commercial", icon: Briefcase, projects: "250+", color: "from-[#f1601f] to-[#7f3e2c]" },
+  //   { name: "Industrial", icon: Settings, projects: "180+", color: "from-slate-700 to-slate-900" },
+  //   { name: "Residential", icon: Building2, projects: "120+", color: "from-[#13344c] to-[#0b1d34]" },
+  //   { name: "Healthcare", icon: Shield, projects: "90+", color: "from-[#7f3e2c] to-[#7f8994]" }
+  // ];
 
   const whyChoose = [
     {
@@ -356,7 +364,7 @@ const ServicesPage = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black">
+      {/* <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black">
         <div className="absolute inset-0 opacity-10">
           <img 
             src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" 
@@ -400,10 +408,11 @@ const ServicesPage = () => {
             </a>
           </div>
         </div>
-      </section>
+      </section> */}
+      <Hero />
 
       {/* Main Services */}
-      <section id="main-services" className="py-32 bg-gradient-to-b from-white to-gray-50">
+      {/* <section id="main-services" className="py-32 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20 fade-section" id="services-intro">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Core Capabilities</span>
@@ -492,10 +501,10 @@ const ServicesPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <MainServices />
       {/* Additional Services */}
-      <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
+      {/* <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
         </div>
@@ -528,10 +537,11 @@ const ServicesPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <AditionalServices />
 
       {/* Industries Served */}
-      <section className="py-32 bg-white">
+      {/* <section className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Industries We Serve</span>
@@ -566,10 +576,11 @@ const ServicesPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <IndustriesServed />
 
       {/* Why Choose Us */}
-      <section className="py-32 bg-gradient-to-br from-gray-50 to-white">
+      {/* <section className="py-32 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Why Choose RAWASY</span>
@@ -598,10 +609,11 @@ const ServicesPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <WhyChooseUs />
 
       {/* Call to Action */}
-      <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
+      {/* <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#f1601f]/20 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#7f3e2c]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -659,10 +671,11 @@ const ServicesPage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
+      <CallToAction />
 
       {/* Contact Section */}
-      <section id="contact" className="py-32 bg-white">
+      {/* <section id="contact" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16">
             <div>
@@ -815,10 +828,11 @@ const ServicesPage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
+      <Contact />
 
       {/* Certifications Banner */}
-      <section className="py-20 bg-gradient-to-r from-[#0b1d34] to-[#13344c]">
+      {/* <section className="py-20 bg-gradient-to-r from-[#0b1d34] to-[#13344c]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-black text-white mb-2">Certified Excellence</h3>
@@ -842,8 +856,8 @@ const ServicesPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Certifications />
       <style jsx>{`
         @keyframes pulse {
           0%, 100% { opacity: 0.3; }

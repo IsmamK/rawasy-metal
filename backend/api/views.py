@@ -165,6 +165,9 @@ class AssociatesView(JsonDBView):
 class AboutPreview(JsonDBView):
     model_name = 'about_preview'
 
+class BuildingFoundationView(JsonDBView):
+    model_name = 'BuildingFoundation'
+
 class Testimonials(JsonDBView):
     model_name = 'testimonials'
 class Contact(JsonDBView):
@@ -279,6 +282,12 @@ class FacilitiesCTAView(JsonDBView):
     model_name = 'facilities-cta'
 
 
+## sector view
+class Sectorview(JsonDBView):
+    model_name = 'sectorview'
+class SectorProjectsview(JsonDBView):
+    model_name = 'sectorprojectsview'
+
 
 ## gallery view
 class GalleryHeroView(JsonDBView):
@@ -307,10 +316,31 @@ class ProjectCard(JsonDBView):
 # Quote Form
 class QuoteForm(JsonDBView):
     model_name = 'quoteForm'
+class QuoteHero(JsonDBView):
+    model_name = 'quoteHero'
+class QuoteWhy(JsonDBView):
+    model_name = 'quotewhy'
+class Quoteservices(JsonDBView):
+    model_name = 'quoteservices'
+class Quotetestimonial(JsonDBView):
+    model_name = 'quotetestimonial'
+class Quotefaq(JsonDBView):
+    model_name = 'quotefaq'
+class QuoteFinalCta(JsonDBView):
+    model_name = 'quotecta'
 
 # Gallery View
 class GalleryView(JsonDBView):
     model_name = 'gallery_data'
+
+class ContactHeroView(JsonDBView):
+    model_name = 'contact-hero'
+class ContactFormView(JsonDBView):
+    model_name = 'contact-form'
+class ContactdepartmentsView(JsonDBView):
+    model_name = 'contact-departments'
+class ContactfaqView(JsonDBView):
+    model_name = 'contact-faq'
 
 def get_service_slugs(request):
     data = ComponentData.objects.get(name="services_page_data").data

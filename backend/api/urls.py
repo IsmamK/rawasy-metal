@@ -35,26 +35,27 @@ urlpatterns = [
     path('home/services/', ServicesView.as_view(), name='services'),
     path('home/statistics/', StatisticsView.as_view(), name='statistics'),
     path('home/timeline/', TimelineView.as_view(), name='timeline'),
-    path('home/why-us/', WhyUsView.as_view(), name='why_us'),
+    path('home/why-choose-us/', WhyUsView.as_view(), name='why_us'),
     path('home/our-clients/', OurClientsView.as_view(), name='our_clients'),
     path('home/associates/', AssociatesView.as_view(), name='associates'),
-    path('home/about-preview/', AboutPreview.as_view(), name='aboutpreview'),
+    path('home/about/', AboutPreview.as_view(), name='aboutpreview'),
     path('home/testimonials/', Testimonials.as_view(), name='testimonials'),
-    path('home/contacts/', Contact.as_view(), name='contact'),
+    path('home/CallToAction/', Contact.as_view(), name='contact'),
     path('home/client-logos/', ClietLogos.as_view(), name='client_logos'),
     path('home/service/', HomeService.as_view(), name='home-service'),
 
-    path('home/industries/', IndustriesView.as_view(), name='news'),
+    path('home/industry/', IndustriesView.as_view(), name='news'),
     path('home/contact/', ContactView.as_view(), name='contact'),
     path('home/location/', LocationView.as_view(), name='location'),
     path('home/featured-video/', FeaturedVideoView.as_view(), name='featured_video'),
+    path('home/BuildingFoundation/', BuildingFoundationView.as_view(), name='BuildingFoundation'),
 
     # About Section
-    path('about/about1/', About1View.as_view(), name='about1'),
-    path('about/about2/', About2View.as_view(), name='about2'),
-    path('about/message/', MessageView.as_view(), name='message'),
-    path('about/core-values/', CoreValuesView.as_view(), name='core_values'),
-    path('about/team/', TeamView.as_view(), name='team'),
+    path('about/company-overview/', About1View.as_view(), name='about1'),
+    path('about/mission/', About2View.as_view(), name='about2'),
+    path('about/capabilities/', MessageView.as_view(), name='message'),
+    path('about/industry/', CoreValuesView.as_view(), name='core_values'),
+    path('about/certifications/', TeamView.as_view(), name='team'),
     path('about/hero/', AboutView.as_view(), name='about'),
 
 
@@ -64,7 +65,7 @@ urlpatterns = [
     path('contact/contact3/', Contact3View.as_view(), name='contact3'),
 
     # Projects Section
-    path('projects/', ProjectsView.as_view(), name='projects'),
+    path('home/project/', ProjectsView.as_view(), name='projects'),
 
 
     ## Facilities section
@@ -75,30 +76,35 @@ urlpatterns = [
     path('facilities/cta/', FacilitiesCTAView.as_view(), name='Facilities-cta'),
 
     # Service Section
-    path('service/service-list/', ServiceListView.as_view(), name='servicelist'),
-    path('service/service-card/', ServiceCardView.as_view(), name='servicecard'),
+    path('services/main-services/', ServiceListView.as_view(), name='servicelist'),
+    path('services/additional-services/', ServiceCardView.as_view(), name='servicecard'),
     path('service-model/', ServicemodelView.as_view(), name='servicemodel'),
-    path('service-hero/', ServicesHeroView.as_view(), name='servicesHero'),
-    path('service-value/', ServicesValueView.as_view(), name='servicesvalue'),
-    path('service-training/', ServicesTrainingView.as_view(), name='servicestraining'),
-    path('service-category/', ServicesCategoryView.as_view(), name='servicescategory'),
+    path('services/hero/', ServicesHeroView.as_view(), name='servicesHero'),
+    path('services/industries-served/', ServicesValueView.as_view(), name='servicesvalue'),
+    path('services/certifications/', ServicesTrainingView.as_view(), name='servicestraining'),
+    path('services/contact/', ServicesCategoryView.as_view(), name='servicescategory'),
     path('service/testing/', ServicesTestingView.as_view(), name='servicesTesting'),
     path('service/CTA/', ServicesCTAView.as_view(), name='servicesCTA'),
     path('service/red-divider/', ServicesRedDividerView.as_view(), name='servicesRedDivider'),
 
 
+    #sectors
+    path('sector/hero/', Sectorview.as_view(), name='sectorview'),
+    path('sector/projects/', SectorProjectsview.as_view(), name='sectorview'),
+
+
     ## gallery
       path('gallery/hero/', GalleryHeroView.as_view(), name='gallery-hero'),
-      path('gallery/content/', GalleryContentView.as_view(), name='gallery-content'),
-      path('gallery/cta/', GalleryCTAView.as_view(), name='gallery-cta'),
+      path('gallery/viewGallery/', GalleryContentView.as_view(), name='gallery-content'),
+      path('gallery/process/', GalleryCTAView.as_view(), name='gallery-cta'),
       path('gallery/red-divider/', GalleryRedDividerView.as_view(), name='gallery-Red'),
 
 
 
       # Projects Section
     path('services/', ServicesPageView.as_view(), name='services-pages'),
-    path('project/project-gallery/', ProjectGallery.as_view(), name='project_gallery'),
-    path('project/project-card/', ProjectCard.as_view(), name='project_card'),
+    path('projects/show-projects/', ProjectGallery.as_view(), name='project_gallery'),
+    path('projects/hero/', ProjectCard.as_view(), name='project_card'),
 
     # sustainability
     path('sustainability/', Sustainability.as_view(), name='sustainability'),
@@ -108,7 +114,13 @@ urlpatterns = [
    
 
    # QuoteForm
-   path('quote/', QuoteForm.as_view(), name='quote'),
+   path('quote/form/', QuoteForm.as_view(), name='quote'),
+   path('quote/hero/', QuoteHero.as_view(), name='quotehero'),
+   path('quote/why-choose-us/', QuoteWhy.as_view(), name='quotewhy-choose-us'),
+   path('quote/services/', Quoteservices.as_view(), name='quote-services'),
+   path('quote/testimonial/', Quotetestimonial.as_view(), name='quote-testimonial'),
+   path('quote/faq/', Quotefaq.as_view(), name='quote-faq'),
+   path('quote/final-cta/', QuoteFinalCta.as_view(), name='quote-final-cta'),
 
 
 
@@ -117,7 +129,10 @@ urlpatterns = [
 
     path('get-service-slugs/', get_service_slugs, name='get_service_slugs'),
 
-   path('contact-messages/', ContactMessageListCreate.as_view(), name='contact-message-list'),
+   path('contact/hero/', ContactHeroView.as_view(), name='contact-message-list'),
+   path('contact/contactform/', ContactFormView.as_view(), name='ContactFormView'),
+   path('contact/departments/', ContactdepartmentsView.as_view(), name='ContactdepartmentsView'),
+   path('contact/faq/', ContactfaqView.as_view(), name='ContactfaqView'),
     path('contact-messages/<int:pk>/', ContactMessageDetail.as_view(), name='contact-message-detail'),
 
     # MEDICAL REPORTS AND FORMS 

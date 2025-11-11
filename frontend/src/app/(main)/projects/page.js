@@ -1,6 +1,9 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Building2, Factory, Droplets, Zap, Home, Hospital, ArrowRight, Filter, Search, MapPin, Calendar, Users, Award, CheckCircle, TrendingUp, ChevronDown, ChevronRight, X } from 'lucide-react';
+import Hero from '@/component/Project-components/Hero';
+import Projects from '@/component/Project-components/Projects';
+import CallToAction from '@/component/home-component/CallToAction';
 
 const RawasyProjectsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -221,17 +224,17 @@ const RawasyProjectsPage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const stats = [
-    { label: "Total Projects", value: "800+", icon: Building2 },
-    { label: "Active Projects", value: "45+", icon: TrendingUp },
-    { label: "Total Value", value: "$2.5B+", icon: Award },
-    { label: "Client Satisfaction", value: "100%", icon: CheckCircle }
-  ];
+  // const stats = [
+  //   { label: "Total Projects", value: "800+", icon: Building2 },
+  //   { label: "Active Projects", value: "45+", icon: TrendingUp },
+  //   { label: "Total Value", value: "$2.5B+", icon: Award },
+  //   { label: "Client Satisfaction", value: "100%", icon: CheckCircle }
+  // ];
 
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      {/* <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-[#0b1d34]">
           <div className="absolute inset-0 opacity-10">
             <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
@@ -257,7 +260,7 @@ const RawasyProjectsPage = () => {
             </p>
           </div>
 
-          {/* Stats */}
+          
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
               <div key={i} className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 hover:bg-white/20 transition-all duration-300">
@@ -268,318 +271,12 @@ const RawasyProjectsPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Filter Section */}
-      <section className="py-12 bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md w-full">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#7f8994]" size={20} />
-              <input
-                type="text"
-                placeholder="Search projects, locations, clients..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#f1601f] focus:outline-none transition-colors duration-300 font-medium"
-              />
-            </div>
-
-            {/* Category Filter - Desktop */}
-            <div className="hidden lg:flex items-center space-x-3 flex-wrap">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold transition-all duration-300 ${
-                    selectedCategory === cat.id
-                      ? 'bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] text-white shadow-lg'
-                      : 'bg-gray-100 text-[#7f8994] hover:bg-gray-200'
-                  }`}
-                >
-                  <cat.icon size={18} />
-                  <span>{cat.name}</span>
-                  <span className="text-xs opacity-80">({cat.count})</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile Filter Toggle */}
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="lg:hidden flex items-center space-x-2 px-6 py-4 bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] text-white rounded-xl font-bold"
-            >
-              <Filter size={20} />
-              <span>Filter by Category</span>
-            </button>
-          </div>
-
-          {/* Mobile Filter Dropdown */}
-          {isFilterOpen && (
-            <div className="lg:hidden mt-4 bg-white rounded-2xl shadow-xl border-2 border-gray-100 p-4 space-y-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setIsFilterOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-5 py-4 rounded-xl font-bold transition-all duration-300 ${
-                    selectedCategory === cat.id
-                      ? 'bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] text-white'
-                      : 'bg-gray-50 text-[#7f8994] hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <cat.icon size={20} />
-                    <span>{cat.name}</span>
-                  </div>
-                  <span className="text-sm opacity-80">{cat.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Projects Grid */}
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-12">
-            <h2 className="text-3xl font-black text-[#0b1d34] mb-2">
-              {selectedCategory === 'all' ? 'All Projects' : categories.find(c => c.id === selectedCategory)?.name}
-            </h2>
-            <p className="text-[#7f8994]">Showing {filteredProjects.length} projects</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProjects.map((project, i) => (
-              <div
-                key={project.id}
-                onClick={() => setSelectedProject(project)}
-                className="group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:-translate-y-2"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                {/* Project Image */}
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                  
-                  {/* Category Badge */}
-                  <div className="absolute top-4 right-4">
-                    <span className="bg-white/95 backdrop-blur-sm text-[#f1601f] px-4 py-2 rounded-full text-xs font-bold tracking-wider">
-                      {categories.find(c => c.id === project.category)?.name}
-                    </span>
-                  </div>
-
-                  {/* Location */}
-                  <div className="absolute bottom-4 left-4 flex items-center space-x-2 text-white">
-                    <MapPin size={16} />
-                    <span className="text-sm font-medium">{project.location}</span>
-                  </div>
-                </div>
-
-                {/* Project Info */}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[#7f8994] text-sm font-semibold">{project.year}</span>
-                    <span className="text-[#f1601f] text-sm font-bold">{project.value}</span>
-                  </div>
-
-                  <h3 className="text-xl font-black text-[#0b1d34] mb-3 group-hover:text-[#f1601f] transition-colors duration-300">
-                    {project.title}
-                  </h3>
-
-                  <p className="text-[#7f8994] text-sm leading-relaxed mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-2 text-sm text-[#7f8994]">
-                      <Users size={16} />
-                      <span className="font-medium">{project.client}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-[#f1601f] font-bold group-hover:translate-x-2 transition-transform duration-300">
-                      <span className="text-sm">View Details</span>
-                      <ArrowRight size={16} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredProjects.length === 0 && (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Search className="text-[#7f8994]" size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-[#0b1d34] mb-3">No Projects Found</h3>
-              <p className="text-[#7f8994] mb-8">Try adjusting your search or filter criteria</p>
-              <button
-                onClick={() => {
-                  setSelectedCategory('all');
-                  setSearchTerm('');
-                }}
-                className="px-6 py-3 bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] text-white rounded-xl font-bold hover:shadow-lg transition-all duration-300"
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Project Details Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-5xl w-full my-8 relative animate-slideUp">
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedProject(null)}
-              className="absolute top-6 right-6 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors duration-300 z-10"
-            >
-              <X className="text-[#0b1d34]" size={24} />
-            </button>
-
-            {/* Hero Image */}
-            <div className="relative h-96 rounded-t-3xl overflow-hidden">
-              <img
-                src={selectedProject.image}
-                alt={selectedProject.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-              
-              <div className="absolute bottom-8 left-8 right-8">
-                <div className="inline-block mb-4">
-                  <span className="bg-[#f1601f] text-white px-4 py-2 rounded-full text-sm font-bold tracking-wider">
-                    {categories.find(c => c.id === selectedProject.category)?.name}
-                  </span>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-white mb-4">{selectedProject.title}</h2>
-                <div className="flex flex-wrap gap-6 text-white/90">
-                  <div className="flex items-center space-x-2">
-                    <MapPin size={18} />
-                    <span className="font-medium">{selectedProject.location}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar size={18} />
-                    <span className="font-medium">{selectedProject.year}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users size={18} />
-                    <span className="font-medium">{selectedProject.client}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-8 md:p-12">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-                <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                  <div className="text-3xl font-black text-[#f1601f] mb-2">{selectedProject.value}</div>
-                  <div className="text-sm font-semibold text-[#7f8994]">Project Value</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                  <div className="text-3xl font-black text-[#f1601f] mb-2">{selectedProject.duration}</div>
-                  <div className="text-sm font-semibold text-[#7f8994]">Duration</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                  <div className="text-3xl font-black text-[#f1601f] mb-2">{selectedProject.year}</div>
-                  <div className="text-sm font-semibold text-[#7f8994]">Completion Year</div>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                  <Award className="text-[#f1601f] mx-auto mb-2" size={32} />
-                  <div className="text-sm font-semibold text-[#7f8994]">Award Winner</div>
-                </div>
-              </div>
-
-              {/* Project Description */}
-              <div className="mb-10">
-                <h3 className="text-2xl font-black text-[#0b1d34] mb-4">Project Overview</h3>
-                <p className="text-lg text-[#7f8994] leading-relaxed">
-                  {selectedProject.description}
-                </p>
-              </div>
-
-              {/* Scope of Work */}
-              <div className="mb-10">
-                <h3 className="text-2xl font-black text-[#0b1d34] mb-6">Scope of Work</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {selectedProject.scope.map((item, i) => (
-                    <div key={i} className="flex items-center space-x-3 bg-gray-50 p-4 rounded-xl">
-                      <CheckCircle className="text-[#f1601f] flex-shrink-0" size={20} />
-                      <span className="font-semibold text-[#0b1d34]">{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Challenge & Solution */}
-              <div className="grid md:grid-cols-2 gap-8 mb-10">
-                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-8">
-                  <h3 className="text-xl font-black text-[#0b1d34] mb-4">Challenge</h3>
-                  <p className="text-[#7f8994] leading-relaxed">{selectedProject.challenges}</p>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8">
-                  <h3 className="text-xl font-black text-[#0b1d34] mb-4">Solution</h3>
-                  <p className="text-[#7f8994] leading-relaxed">{selectedProject.solution}</p>
-                </div>
-              </div>
-
-              {/* Results & Impact */}
-              <div className="bg-gradient-to-br from-[#0b1d34] to-[#13344c] rounded-2xl p-8 text-white">
-                <h3 className="text-2xl font-black mb-6">Results & Impact</h3>
-                <div className="space-y-4">
-                  {selectedProject.results.map((result, i) => (
-                    <div key={i} className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-[#f1601f] rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                        <CheckCircle size={20} />
-                      </div>
-                      <p className="text-lg text-white/90 leading-relaxed">{result}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      </section> */}
+      <Hero />
+      
+      <Projects />
       {/* Call to Action */}
-      <section className="py-24 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-[#0b1d34] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#f1601f]/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#7f3e2c]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="text-5xl md:text-6xl font-black text-white mb-8 leading-tight">
-            Ready to Start Your <span className="bg-gradient-to-r from-[#f1601f] to-orange-500 bg-clip-text text-transparent">Next Project?</span>
-          </h2>
-          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Let's collaborate to bring your vision to life with our proven expertise and commitment to excellence.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <a href="/contact" className="group bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] text-white px-10 py-6 rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 inline-flex items-center justify-center space-x-3">
-              <span>Get Started Today</span>
-              <ArrowRight className="group-hover:translate-x-2 transition-transform duration-300" size={24} />
-            </a>
-            <a href="/about" className="bg-white/10 backdrop-blur-sm text-white px-10 py-6 rounded-xl font-bold text-lg border-2 border-white/20 hover:bg-white hover:text-[#0b1d34] transition-all duration-300 inline-flex items-center justify-center">
-              Learn More About Us
-            </a>
-          </div>
-        </div>
-      </section>
+      <CallToAction />
 
       <style jsx>{`
         @keyframes slideUp {

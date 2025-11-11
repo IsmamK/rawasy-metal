@@ -2,6 +2,14 @@
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowRight, Phone, Mail, MapPin, Award, Shield, TrendingUp, Users, Building2, Wrench, HardHat, Briefcase, Star, CheckCircle, Clock, Target, Zap, Globe } from 'lucide-react';
+import Hero from '@/component/home-component/Hero';
+import About from '@/component/home-component/About';
+import BuildingFoundation from '@/component/home-component/BuildingFoundation';
+import Services from '@/component/home-component/Services';
+import IndustrySector from '@/component/home-component/IndustrySector';
+import Project from '@/component/home-component/Project';
+import WhyChooseUs from '@/component/home-component/WhyChooseUs';
+import CallToAction from '@/component/home-component/CallToAction';
 
 const RawasyHomepage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -71,42 +79,42 @@ const RawasyHomepage = () => {
     }
   ];
 
-  const stats = [
-    { icon: Award, number: "15+", label: "Years of Excellence", detail: "Industry Leadership" },
-    { icon: Building2, number: "800+", label: "Projects Delivered", detail: "Across Gulf Region" },
-    { icon: Users, number: "2000+", label: "Skilled Workforce", detail: "Ready to Deploy" },
-    { icon: Globe, number: "50+", label: "Major Clients", detail: "Trusted Partners" }
-  ];
+  // const stats = [
+  //   { icon: Award, number: "15+", label: "Years of Excellence", detail: "Industry Leadership" },
+  //   { icon: Building2, number: "800+", label: "Projects Delivered", detail: "Across Gulf Region" },
+  //   { icon: Users, number: "2000+", label: "Skilled Workforce", detail: "Ready to Deploy" },
+  //   { icon: Globe, number: "50+", label: "Major Clients", detail: "Trusted Partners" }
+  // ];
 
-  const certifications = [
-    { title: "ISO 9001:2015", desc: "Quality Management", icon: Award },
-    { title: "OHSAS 18001", desc: "Safety Standards", icon: Shield },
-    { title: "Grade 1 License", desc: "Premium Contractor", icon: Star },
-    { title: "ISO 14001", desc: "Environmental", icon: Target }
-  ];
+  // const certifications = [
+  //   { title: "ISO 9001:2015", desc: "Quality Management", icon: Award },
+  //   { title: "OHSAS 18001", desc: "Safety Standards", icon: Shield },
+  //   { title: "Grade 1 License", desc: "Premium Contractor", icon: Star },
+  //   { title: "ISO 14001", desc: "Environmental", icon: Target }
+  // ];
 
-  const sectors = [
-    { name: "Oil & Gas", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=400&fit=crop", projects: "150+" },
-    { name: "Infrastructure", img: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=600&h=400&fit=crop", projects: "200+" },
-    { name: "Commercial", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop", projects: "250+" },
-    { name: "Industrial", img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop", projects: "180+" },
-    { name: "Residential", img: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=400&fit=crop", projects: "120+" },
-    { name: "Healthcare", img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop", projects: "90+" }
-  ];
+  // const sectors = [
+  //   { name: "Oil & Gas", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&h=400&fit=crop", projects: "150+" },
+  //   { name: "Infrastructure", img: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=600&h=400&fit=crop", projects: "200+" },
+  //   { name: "Commercial", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop", projects: "250+" },
+  //   { name: "Industrial", img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop", projects: "180+" },
+  //   { name: "Residential", img: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=400&fit=crop", projects: "120+" },
+  //   { name: "Healthcare", img: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=600&h=400&fit=crop", projects: "90+" }
+  // ];
 
-  const values = [
-    { icon: Target, title: "Excellence", desc: "Uncompromising quality in every project" },
-    { icon: Shield, title: "Safety First", desc: "Zero-harm workplace culture" },
-    { icon: Clock, title: "Timely Delivery", desc: "Meeting deadlines without exception" },
-    { icon: Zap, title: "Innovation", desc: "Cutting-edge construction methods" }
-  ];
+  // const values = [
+  //   { icon: Target, title: "Excellence", desc: "Uncompromising quality in every project" },
+  //   { icon: Shield, title: "Safety First", desc: "Zero-harm workplace culture" },
+  //   { icon: Clock, title: "Timely Delivery", desc: "Meeting deadlines without exception" },
+  //   { icon: Zap, title: "Innovation", desc: "Cutting-edge construction methods" }
+  // ];
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Navigation */}
    
       {/* Hero Section - Cinematic */}
-      <section id="home" ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* <section id="home" ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black"></div>
           <div className="absolute inset-0 opacity-20">
@@ -114,7 +122,7 @@ const RawasyHomepage = () => {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
           
-          {/* Animated shapes */}
+          
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#f1601f]/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#7f3e2c]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
@@ -188,10 +196,10 @@ const RawasyHomepage = () => {
             <div className="w-1.5 h-3 bg-white rounded-full animate-pulse"></div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Hero />
       {/* Stats Bar */}
-      <section className="relative -mt-20 z-20">
+      {/* <section className="relative -mt-20 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-[#f1601f] to-[#7f3e2c] rounded-3xl shadow-2xl p-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -208,10 +216,10 @@ const RawasyHomepage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* About Section - Overlapping Layout */}
-      <section id="about" className="py-32 bg-white relative overflow-hidden">
+      {/* <section id="about" className="py-32 bg-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gray-50 -skew-x-12 transform translate-x-1/4"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -286,7 +294,7 @@ const RawasyHomepage = () => {
             </div>
           </div>
 
-          {/* Certifications */}
+          
           <div className="mt-24 grid grid-cols-2 lg:grid-cols-4 gap-6">
             {certifications.map((cert, i) => (
               <div key={i} className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-100 rounded-2xl p-6 hover:border-[#f1601f] hover:shadow-xl transition-all duration-300 group">
@@ -297,9 +305,9 @@ const RawasyHomepage = () => {
             ))}
           </div>
         </div>
-      </section>
-
-          <section id="home" className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-br from-white to-[#f9fafb] scroll-section">
+      </section> */}
+      <About />
+          {/* <section id="home" className="pt-24 pb-16 md:pt-32 md:pb-24 bg-gradient-to-br from-white to-[#f9fafb] scroll-section">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
@@ -357,10 +365,10 @@ const RawasyHomepage = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <BuildingFoundation />
       {/* Services Section - Interactive Cards */}
-      <section id="services" className="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+      {/* <section id="services" className="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: 'radial-gradient(circle, #f1601f 1px, transparent 1px)', backgroundSize: '50px 50px' }}></div>
         </div>
@@ -428,10 +436,10 @@ const RawasyHomepage = () => {
             ))}
           </div>
         </div>
-      </section>
-
+      </section> */}
+      <Services />
       {/* Sectors Section - Grid Masonry */}
-      <section id="sectors" className="py-32 bg-[#0b1d34] relative overflow-hidden">
+      {/* <section id="sectors" className="py-32 bg-[#0b1d34] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
         </div>
@@ -463,10 +471,11 @@ const RawasyHomepage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <IndustrySector />
 
       {/* Projects Showcase */}
-      <section id="projects" className="py-32 bg-white relative">
+      {/* <section id="projects" className="py-32 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
             <div>
@@ -545,10 +554,11 @@ const RawasyHomepage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <Project />
 
       {/* Why Choose Us */}
-      <section className="py-32 bg-gradient-to-br from-gray-50 to-white">
+      {/* <section className="py-32 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <span className="text-[#f1601f] font-bold text-sm tracking-widest uppercase">Why Choose RAWASY</span>
@@ -605,10 +615,11 @@ const RawasyHomepage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
+      <WhyChooseUs />
 
       {/* Call to Action */}
-      <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
+      {/* <section className="py-32 bg-gradient-to-br from-[#0b1d34] via-[#13344c] to-black relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 opacity-10">
             <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&h=1080&fit=crop" alt="" className="w-full h-full object-cover" />
@@ -655,7 +666,8 @@ const RawasyHomepage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
+      <CallToAction />
 
 
       <style jsx>{`
