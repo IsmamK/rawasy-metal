@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+Add-Content .gitignore "`nbackend/media/uploaded_images/"
+Add-Content .gitignore "`n*.mov"
+Add-Content .gitignore "`n*.mp4"
