@@ -63,6 +63,7 @@ urlpatterns = [
     path('contact/contact1/', Contact1View.as_view(), name='contact1'),
     path('contact/contact2/', Contact2View.as_view(), name='contact2'),
     path('contact/contact3/', Contact3View.as_view(), name='contact3'),
+    path('contact/contact4/', Contact4View.as_view(), name='contact4'),
 
     # Projects Section
     path('home/project/', ProjectsView.as_view(), name='projects'),

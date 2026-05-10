@@ -221,6 +221,8 @@ class AboutView(JsonDBView):
 
 class Contact2View(JsonDBView):
     model_name = 'contact2_data'
+class Contact4View(JsonDBView):
+    model_name = 'contact4_data'
 
 
 # Services Page View
