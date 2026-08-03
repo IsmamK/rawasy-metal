@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   LayoutGrid,
   Truck,
@@ -12,6 +12,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
 
 const iconMap = {
   LayoutGrid,
@@ -176,49 +178,24 @@ const normalizeData = (apiData) => {
  * Each feature title and description is translated via the
  * LanguageContext. Icons are sourced from Lucide.
  */
-export default function AboutFeatures() {
+export default function AboutFeatures({ initialContent = null }) {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const ENDPOINT = `${apiUrl}/home/about/`;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchAboutData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch about features data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching about features data:", error);
-        setData(DEFAULT_DATA);
-        setTempData(DEFAULT_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAboutData();
-  }, [ENDPOINT]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    {
+      normalize: normalizeData,
+      buildFallback: () => DEFAULT_DATA,
+      initialContent,
+    }
+  );
 
   const activeData = editMode ? tempData : data;
 
@@ -228,9 +205,7 @@ export default function AboutFeatures() {
     DEFAULT_DATA.translations.EN.features;
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -306,9 +281,7 @@ export default function AboutFeatures() {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -320,8 +293,8 @@ export default function AboutFeatures() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 

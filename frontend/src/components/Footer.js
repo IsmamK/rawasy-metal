@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -11,6 +11,8 @@ import {
 } from "react-icons/fa";
 import { Edit, Save, X, Plus, Trash2, Upload } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
 
 const socialIconMap = {
   facebook: FaFacebookF,
@@ -60,6 +62,10 @@ const DEFAULT_DATA = {
           href: "/collections",
         },
         {
+          label: "About Us",
+          href: "/about",
+        },
+        {
           label: "Contact",
           href: "/quotation",
         },
@@ -79,6 +85,10 @@ const DEFAULT_DATA = {
         {
           label: "Kollektionen",
           href: "/collections",
+        },
+        {
+          label: "Über uns",
+          href: "/about",
         },
         {
           label: "Kontakt",
@@ -102,6 +112,10 @@ const DEFAULT_DATA = {
           href: "/collections",
         },
         {
+          label: "من نحن",
+          href: "/about",
+        },
+        {
           label: "اتصل بنا",
           href: "/quotation",
         },
@@ -121,6 +135,10 @@ const DEFAULT_DATA = {
         {
           label: "Collections",
           href: "/collections",
+        },
+        {
+          label: "À propos",
+          href: "/about",
         },
         {
           label: "Contact",
@@ -144,6 +162,10 @@ const DEFAULT_DATA = {
           href: "/collections",
         },
         {
+          label: "Chi siamo",
+          href: "/about",
+        },
+        {
           label: "Contatto",
           href: "/quotation",
         },
@@ -163,6 +185,10 @@ const DEFAULT_DATA = {
         {
           label: "Colecciones",
           href: "/collections",
+        },
+        {
+          label: "Sobre nosotros",
+          href: "/about",
         },
         {
           label: "Contacto",
@@ -192,13 +218,10 @@ const normalizeData = (apiData) => {
   };
 };
 
-export default function LuxuryFooter() {
+export default function LuxuryFooter({ initialContent = null }) {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
@@ -210,36 +233,14 @@ export default function LuxuryFooter() {
 
   const year = new Date().getFullYear();
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchFooterData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch footer data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching footer data:", error);
-        setData(DEFAULT_DATA);
-        setTempData(DEFAULT_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFooterData();
-  }, [ENDPOINT]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    {
+      normalize: normalizeData,
+      buildFallback: () => DEFAULT_DATA,
+      initialContent,
+    }
+  );
 
   const activeData = editMode ? tempData : data;
 
@@ -273,9 +274,7 @@ export default function LuxuryFooter() {
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -393,9 +392,7 @@ export default function LuxuryFooter() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required for logo upload.");
       return;
     }
@@ -409,10 +406,8 @@ export default function LuxuryFooter() {
     try {
       const response = await fetch(`${apiUrl}/images/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -438,9 +433,7 @@ export default function LuxuryFooter() {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -452,8 +445,8 @@ export default function LuxuryFooter() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
@@ -552,8 +545,6 @@ export default function LuxuryFooter() {
                   width={75}
                   height={75}
                   className="object-contain"
-                  priority
-                  unoptimized
                 />
               )}
 

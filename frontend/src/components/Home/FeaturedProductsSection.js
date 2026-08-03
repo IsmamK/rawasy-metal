@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   FiCreditCard,
   FiGlobe,
@@ -22,6 +23,39 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
+
+// Only blob/data URLs (in-browser upload previews) can't go through the
+// optimizer. Everything else — including backend-hosted media — is optimizable
+// now that the Django host is whitelisted in next.config.mjs.
+const isUnoptimizable = (src) =>
+  typeof src === "string" && (src.startsWith("blob:") || src.startsWith("data:"));
+
+const OptimizedImage = ({
+  src,
+  alt,
+  fill = false,
+  width,
+  height,
+  sizes,
+  className = "",
+  priority = false,
+}) => {
+  if (!src) return null;
+
+  return (
+    <Image
+      src={src}
+      alt={alt || ""}
+      {...(fill ? { fill: true } : { width, height })}
+      sizes={fill ? sizes || "100vw" : sizes}
+      className={className}
+      priority={priority}
+      unoptimized={isUnoptimizable(src)}
+    />
+  );
+};
 
 const container = {
   hidden: { opacity: 0 },
@@ -194,13 +228,10 @@ const normalizeData = (apiData) => {
   };
 };
 
-const Feature = () => {
+const Feature = ({ initialContent = null }) => {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState({});
@@ -213,36 +244,14 @@ const Feature = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const ENDPOINT = `${apiUrl}/home/industry/`;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchFeatureData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch feature data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching feature data:", error);
-        setData(DEFAULT_DATA);
-        setTempData(DEFAULT_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFeatureData();
-  }, [ENDPOINT]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    {
+      normalize: normalizeData,
+      buildFallback: () => DEFAULT_DATA,
+      initialContent,
+    }
+  );
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -285,18 +294,24 @@ const Feature = () => {
     return newData;
   };
 
-  const openWhatsApp = () => {
+  // `productName` is passed from the detail modal so the enquiry arrives with
+  // the curtain already identified, rather than as a bare "book an appointment".
+  const openWhatsApp = (productName = null) => {
+    const base =
+      copy.whatsappMessage || "Hello, I would like to book an appointment.";
     const message = encodeURIComponent(
-      copy.whatsappMessage || "Hello, I would like to book an appointment."
+      productName ? `${base}\n\nProduct: ${productName}` : base
     );
 
-    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, "_blank");
+    window.open(
+      `https://wa.me/${whatsappNumber}?text=${message}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -340,13 +355,15 @@ const Feature = () => {
   };
 
   const addNewProduct = () => {
+    const newProductId = Date.now();
+
     setTempData((prev) => {
       const newData = cloneData(prev);
       ensureCurrentLanguageExists(newData);
 
       newData.translations[lang].products.push({
-        id: Date.now(),
-        key: `newProduct${Date.now()}`,
+        id: newProductId,
+        key: `newProduct${newProductId}`,
         icon: "FiShoppingCart",
         title: "New Product",
         description: "Product description goes here.",
@@ -384,9 +401,7 @@ const Feature = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required for image upload.");
       return;
     }
@@ -400,10 +415,8 @@ const Feature = () => {
     try {
       const response = await fetch(`${apiUrl}/images/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -425,9 +438,7 @@ const Feature = () => {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -439,8 +450,8 @@ const Feature = () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
@@ -661,7 +672,8 @@ const Feature = () => {
           <motion.div
             variants={container}
             initial="hidden"
-            whileInView="show"
+            animate={editMode ? "show" : undefined}
+            whileInView={editMode ? undefined : "show"}
             viewport={{ once: true }}
             className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
           >
@@ -693,14 +705,12 @@ const Feature = () => {
                           <div className="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#D4AF37]"></div>
                         </div>
                       ) : (
-                        <div
-                          className="h-full w-full"
-                          style={{
-                            backgroundImage: `url(${feature.image})`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                          }}
+                        <OptimizedImage
+                          src={feature.image}
+                          alt={feature.title || "Curtain product"}
+                          fill
+                          sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw"
+                          className="object-cover"
                         />
                       )}
                     </div>
@@ -955,10 +965,12 @@ const Feature = () => {
                     handleImageClickInModal(selectedProduct.image, e)
                   }
                 >
-                  <img
+                  <OptimizedImage
                     src={selectedProduct.image}
                     alt={selectedProduct.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 767px) 100vw, 50vw"
+                    className="object-cover"
                   />
 
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -1002,10 +1014,6 @@ const Feature = () => {
                     </span>
                   </div>
 
-                  <div className="text-3xl font-bold text-[#07619b] mb-4">
-                    {selectedProduct.price}
-                  </div>
-
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center text-gray-700">
                       <FiPhone className="w-5 h-5 mr-3 text-[#07619b]" />
@@ -1016,7 +1024,7 @@ const Feature = () => {
                   </div>
 
                   <button
-                    onClick={openWhatsApp}
+                    onClick={() => openWhatsApp(selectedProduct.title)}
                     className="w-full bg-gradient-to-r from-[#07619b] to-[#279ccb] text-white py-3 rounded-xl font-bold hover:shadow-lg transform hover:scale-105 transition-all duration-300"
                   >
                     {copy.callForMeasurement}
@@ -1057,17 +1065,16 @@ const Feature = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
               transition={{ duration: 0.4, type: "spring", damping: 25 }}
-              className="w-screen h-screen flex items-center justify-center p-4 sm:p-6"
+              className="relative w-screen h-screen flex items-center justify-center p-4 sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <img
+              <OptimizedImage
                 src={fullScreenImage}
                 alt={copy.productFullScreen}
-                className="max-w-full max-h-full w-auto h-auto object-contain"
-                style={{
-                  display: "block",
-                  margin: "0 auto",
-                }}
+                fill
+                sizes="100vw"
+                className="object-contain p-4 sm:p-6"
+                priority
               />
             </motion.div>
 

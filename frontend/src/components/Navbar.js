@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -19,6 +19,28 @@ export default function Navbar() {
 
   const [open, setOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const barRef = useRef(null);
+
+  // Pages that need to clear the fixed navbar read this instead of a guessed
+  // padding value, so the gap disappears at every breakpoint and whenever the
+  // bar's own height changes (language dropdown wrap, mobile menu, etc.).
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+
+    const setHeight = () => {
+      // +1 for the bar's own border-b, which sits outside this element.
+      document.documentElement.style.setProperty(
+        "--navbar-h",
+        `${el.offsetHeight + 1}px`
+      );
+    };
+
+    setHeight();
+    const observer = new ResizeObserver(setHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const languages = [
     { code: "EN", name: "English" },
@@ -73,11 +95,14 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 w-screen z-50">
       {/* Semi-transparent backdrop and border */}
       <div className="w-full bg-black/50 backdrop-blur-xl border-b border-[#D4AF37]/20">
-        <div className="w-full md:max-w-7xl md:mx-auto px-3 sm:px-4 md:px-6 py-4 flex items-center justify-between">
+        <div
+          ref={barRef}
+          className="w-full md:max-w-7xl md:mx-auto px-3 sm:px-4 md:px-6 py-4 flex items-center justify-between"
+        >
           {/* Logo and brand name */}
           <Link href="/" className="flex items-center gap-3 group min-w-0">
             <Image
-              src="/curtains-logo.ico"
+              src="/curtains-logo.png"
               alt="SKF Curtains Logo"
               width={50}
               height={50}
@@ -97,13 +122,19 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop navigation links */}
-          <div className="hidden md:flex items-center gap-12">
+          {/* gap tightened at md so the fourth link (About) does not overflow
+              on narrow tablet widths; full spacing returns at lg. */}
+          <div className="hidden md:flex items-center gap-6 lg:gap-12">
             <PremiumLink href="/" active={isActive("/")}>
               {t("navbar.home")}
             </PremiumLink>
 
             <PremiumLink href="/collections" active={isActive("/collections")}>
               {t("navbar.collections")}
+            </PremiumLink>
+
+            <PremiumLink href="/about" active={isActive("/about")}>
+              {t("navbar.about")}
             </PremiumLink>
 
             <PremiumLink href="/quotation" active={isActive("/quotation")}>
@@ -171,6 +202,14 @@ export default function Navbar() {
                   onClick={closeMobileMenu}
                 >
                   {t("navbar.collections")}
+                </MobileLink>
+
+                <MobileLink
+                  href="/about"
+                  active={isActive("/about")}
+                  onClick={closeMobileMenu}
+                >
+                  {t("navbar.about")}
                 </MobileLink>
 
                 <MobileLink

@@ -10,26 +10,59 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_bool(name, default):
+    """Read a boolean from the environment, falling back to `default`."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-59h=v4rl81v+=503op(s3oc70h7iv$08w1bmzmhif=m@_a(6u7"
+# Set DJANGO_SECRET_KEY in the environment for any deployed instance. The
+# fallback below is the historical development key and is public in git history,
+# so it must never be what production runs on.
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-59h=v4rl81v+=503op(s3oc70h7iv$08w1bmzmhif=m@_a(6u7",
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# ==========================================================
+# DEBUG
+# ==========================================================
+# Defaults to True to preserve the previous local-development behaviour.
+# Set DJANGO_DEBUG=false in production — see MEDIA section below, which is
+# deliberately decoupled from DEBUG so turning it off cannot break images.
+DEBUG = env_bool("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = []
+
+ALLOWED_HOSTS = [
+    # ======================================================
+    # LOCAL DEVELOPMENT ONLY
+    # Comment these two lines out for production if desired.
+    # They are safe to leave, but production does not need them.
+    # ======================================================
+    "localhost",
+    "127.0.0.1",
+
+    # PRODUCTION DOMAINS
+    "skfcurtains.com",
+    "www.skfcurtains.com",
+]
 
 
 # Application definition
-import os
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -42,15 +75,18 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'djoser',
-  'rest_framework.authtoken',
-      'django_filters',
+    'rest_framework.authtoken',
+    'django_filters',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True;
-    
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        # Reads the same DRF token from an httpOnly cookie instead of the
+        # Authorization header, for the /showforms dashboard login — see
+        # contact/authentication.py for why.
+        'contact.authentication.CookieTokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
@@ -58,25 +94,34 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
-    
 }
 
 
 DJOSER = {
-    
+
 }
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+
+    # CORS middleware should stay before CommonMiddleware
     'corsheaders.middleware.CorsMiddleware',
+
     "django.middleware.common.CommonMiddleware",
-    'django.middleware.gzip.GZipMiddleware',  # Add this line
+    'django.middleware.gzip.GZipMiddleware',
+
+    # Adds Cache-Control to /media/ responses for as long as Django is the one
+    # serving them. See backend/middleware.py.
+    'backend.middleware.MediaCacheControlMiddleware',
+
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 # settings.py
 
@@ -94,10 +139,36 @@ GZIP_CONTENT_TYPES = [
 
 GZIP_MIN_SIZE = 0  # Force compression for all responses
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+# ==========================================================
+# CORS
+# ==========================================================
+# Previously `CORS_ALLOW_ALL_ORIGINS = True` was set twice, which silently
+# overrode CORS_ALLOWED_ORIGINS below and made the allowlist dead config.
+# Combined with CORS_ALLOW_CREDENTIALS that let any origin make credentialed
+# requests, so it is now tied to DEBUG: open locally, allowlisted in production.
+CORS_ALLOW_ALL_ORIGINS = DEBUG
+
 CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGINS = [
+    # Local development
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+
+    # Production domains
+    "https://skfcurtains.com",
+    "https://www.skfcurtains.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://skfcurtains.com",
+    "https://www.skfcurtains.com",
+]
+
+
 ROOT_URLCONF = "backend.urls"
+
 
 TEMPLATES = [
     {
@@ -114,6 +185,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
@@ -134,36 +206,46 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
     },
 ]
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'jgalfalah.com'  # SMTP server address
-EMAIL_PORT = 465  # SMTP port (SSL)
-EMAIL_USE_SSL = True  # Use SSL
-EMAIL_USE_TLS = False  # SSL takes precedence, so use TLS as False
-EMAIL_HOST_USER = 'no-reply@jgalfalah.com'  # Your email address
-EMAIL_HOST_PASSWORD = 'Stechgroup@2025'  # Your email account's password
-DEFAULT_FROM_EMAIL = 'no-reply@jgalfalah.com'  # Default sender email
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'jgalfalah.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 465))
+EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL', True)
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', False)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'no-reply@jgalfalah.com')
 
-# settings.py
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# SECURITY: this password was committed in plain text and is in git history.
+# It must be rotated, then supplied via EMAIL_HOST_PASSWORD in the environment.
+# No fallback value on purpose — mail failing loudly beats a leaked credential
+# silently continuing to work.
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
-import os
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@jgalfalah.com')
 
 
 # --------------------
@@ -178,23 +260,51 @@ USE_I18N = True
 
 USE_TZ = True
 
+
 # -------------------- CUTOFF POINT ----------------------
 
-# Static files (CSS, JavaScript, Images)
+
+# ==========================================================
+# Static & media files
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
+# ==========================================================
 
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Who serves /media/?
+#
+# Django's `static()` URL helper is a no-op whenever DEBUG is False, so setting
+# DEBUG=False used to silently break every uploaded image. Media serving is
+# therefore an explicit switch rather than a side effect of DEBUG.
+#
+# Leave this on until a reverse proxy or CDN is actually serving /media/, then
+# set SERVE_MEDIA_FROM_DJANGO=false. Django is a poor file server: it ties up a
+# worker per request and cannot match a CDN's edge caching.
+SERVE_MEDIA_FROM_DJANGO = env_bool("SERVE_MEDIA_FROM_DJANGO", True)
+
+# Uploaded files are never overwritten in place — Django's storage appends a
+# random suffix on collision — so their content is effectively immutable and
+# safe to cache for a long time.
+MEDIA_CACHE_MAX_AGE = int(os.environ.get("MEDIA_CACHE_MAX_AGE", 60 * 60 * 24 * 365))
+
+# How long the read-mostly content endpoints may be cached. These only change
+# when an admin saves an edit.
+API_CACHE_MAX_AGE = int(os.environ.get("API_CACHE_MAX_AGE", 60))
+API_CACHE_SHARED_MAX_AGE = int(os.environ.get("API_CACHE_SHARED_MAX_AGE", 300))
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-import os
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 10 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
+
 
 CACHES = {
     'default': {

@@ -1,10 +1,89 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
 import { Edit, Save, X, Plus, Trash2, Upload } from "lucide-react";
+
+/**
+ * Hover preview video that is not mounted until the pointer first enters the
+ * card. Previously all four cards mounted their <video> on page load, pulling
+ * ~4MB of MP4 before the user had interacted with anything. The overlay itself
+ * still renders (so it can receive the hover), but the media element — and
+ * therefore the network request — is deferred.
+ *
+ * Once activated the element stays mounted so repeat hovers replay instantly
+ * instead of re-fetching.
+ */
+const HoverPreviewVideo = ({ src, poster }) => {
+  const [activated, setActivated] = useState(false);
+  const videoRef = useRef(null);
+
+  /**
+   * Playback must be driven imperatively rather than left to the `autoPlay`
+   * attribute.
+   *
+   * JSX `muted` renders as an ATTRIBUTE, but Chrome's autoplay policy tests the
+   * muted PROPERTY, which stays false. The browser therefore saw an unmuted
+   * autoplay and blocked it — silently, since nothing awaited `play()`. Setting
+   * `.muted = true` on the node before calling play() is the fix.
+   *
+   * Verified under --autoplay-policy=document-user-activation-required:
+   * attribute-muted + autoplay stayed paused at currentTime 0 with no error;
+   * property-muted + play() advances normally.
+   *
+   * `useLayoutEffect` (not `useEffect`) so the property is set before the
+   * browser gets a chance to paint the freshly-mounted element. The `autoPlay`
+   * attribute is intentionally NOT set on the element below — leaving it on
+   * let the browser's own native autoplay fire on mount, before this effect
+   * ran, using the (still-false) `muted` property; that native attempt got
+   * blocked and swallowed, and the DOM has no reliable way to "retry" after
+   * the fact. Driving playback entirely through this single, deliberate
+   * `play()` call removes that race.
+   */
+  useLayoutEffect(() => {
+    const video = videoRef.current;
+    if (!activated || !video) return;
+
+    video.muted = true;
+
+    const attempt = video.play();
+    if (attempt?.catch) {
+      attempt.catch((error) => {
+        console.warn("Hover preview video could not play:", error);
+      });
+    }
+  }, [activated, src]);
+
+  if (!src) return null;
+
+  return (
+    <div
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+      onMouseEnter={() => setActivated(true)}
+    >
+      {activated && (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          src={src}
+          poster={poster}
+          muted
+          loop
+          playsInline
+          // "auto" rather than "none" simply because the element is not mounted
+          // until hover, so the download is already deferred and there is
+          // nothing left for "none" to save. (Measured: preload was NOT what
+          // blocked playback — attribute-muted stays blocked at either value.)
+          preload="auto"
+        />
+      )}
+    </div>
+  );
+};
 
 const DEFAULT_DATA = {
   translations: {
@@ -211,6 +290,43 @@ const DEFAULT_DATA = {
 
 const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
+/**
+ * The "Link / Href" field is free text, so a value like "office" (a category
+ * key, not a path) silently broke navigation: `next/link` resolves a href
+ * with no leading slash relative to the CURRENT page rather than treating it
+ * as absolute, so from "/" it went to "/office" instead of
+ * "/collections/office". Absolute paths and external URLs pass through
+ * untouched; anything else is treated as a category key.
+ */
+const normalizeCollectionHref = (href) => {
+  const trimmed = String(href || "").trim();
+  if (!trimmed) return "/collections/home";
+  if (trimmed.startsWith("/") || /^https?:\/\//i.test(trimmed)) return trimmed;
+  return `/collections/${trimmed.replace(/^collections\//, "")}`;
+};
+
+/**
+ * Busts the server's cached `home/service/` fetch (see `lib/serverContent.js`'s
+ * `tags: [content:${path}]`) right after a save. Without this, an edit saved
+ * just now — a new collection, a changed link — can stay invisible to the
+ * next server render for up to the fetch's 5-minute revalidate window. Since
+ * server-provided content wins on first render (see `useEditableContent`),
+ * that stale copy then overwrites the fresh edit on reload instead of the
+ * other way around — which is what made a saved collection look like it got
+ * silently reverted.
+ */
+const revalidateHomeServiceContent = async () => {
+  try {
+    await fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag: "content:home/service/" }),
+    });
+  } catch (error) {
+    console.error("Error revalidating home/service content:", error);
+  }
+};
+
 const normalizeData = (apiData) => {
   if (!apiData || typeof apiData !== "object") return DEFAULT_DATA;
 
@@ -229,13 +345,10 @@ const normalizeData = (apiData) => {
  * video preview. The heading and card titles are translated via
  * LanguageContext.
  */
-export default function CollectionsSection() {
+export default function CollectionsSection({ initialContent = null }) {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState({});
@@ -246,36 +359,14 @@ export default function CollectionsSection() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const ENDPOINT = `${apiUrl}/home/service/`;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchCollectionsData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch collections data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching collections data:", error);
-        setData(DEFAULT_DATA);
-        setTempData(DEFAULT_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCollectionsData();
-  }, [ENDPOINT]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    {
+      normalize: normalizeData,
+      buildFallback: () => DEFAULT_DATA,
+      initialContent,
+    }
+  );
 
   const activeData = editMode ? tempData : data;
 
@@ -306,9 +397,7 @@ export default function CollectionsSection() {
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -377,9 +466,7 @@ export default function CollectionsSection() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required for upload.");
       return;
     }
@@ -399,10 +486,8 @@ export default function CollectionsSection() {
     try {
       const response = await fetch(`${apiUrl}/images/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -429,9 +514,7 @@ export default function CollectionsSection() {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -443,8 +526,8 @@ export default function CollectionsSection() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
@@ -458,6 +541,7 @@ export default function CollectionsSection() {
       setData(normalizedData);
       setTempData(normalizedData);
       setEditMode(false);
+      await revalidateHomeServiceContent();
 
       alert("Collections section updated successfully!");
     } catch (error) {
@@ -574,23 +658,13 @@ export default function CollectionsSection() {
                       src={item.image}
                       alt={item.title}
                       fill
-                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
                       className="object-cover transition-all duration-500 group-hover:opacity-0"
                     />
                   )}
 
                   {/* Video preview on hover */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <video
-                      className="w-full h-full object-cover"
-                      src={item.video}
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                      autoPlay
-                    />
-                  </div>
+                  <HoverPreviewVideo src={item.video} poster={item.image} />
 
                   {videoUploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-10">
@@ -604,9 +678,9 @@ export default function CollectionsSection() {
                   )}
                 </div>
 
-                {/* Overlay gradients */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-[#D4AF37]/20 to-transparent transition duration-500" />
+                {/* Overlay gradients (decorative only — must not block hover events reaching the video) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-[#D4AF37]/20 to-transparent transition duration-500 pointer-events-none" />
 
                 {/* Title */}
                 <div className="absolute bottom-6 left-6 right-6">
@@ -747,7 +821,7 @@ export default function CollectionsSection() {
             return (
               <Link
                 key={`${item.key}-${index}`}
-                href={item.href}
+                href={normalizeCollectionHref(item.href)}
                 className="group"
               >
                 {CardContent}

@@ -1,17 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-// This page acts as a simple redirect to the default category
-// ("home").  It runs on the client to avoid a full page refresh.
-// When a user navigates to /collections without a category
-// specified, they are automatically sent to /collections/home.
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
+// /collections has no content of its own — it sends visitors to the default
+// category. This used to happen in a client `useEffect`, which shipped a JS
+// bundle, hydrated, and only then navigated: users saw a blank flash and
+// crawlers could index an empty page. A server redirect issues a real 307
+// before anything renders.
 export default function CollectionsRootPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace("/collections/home");
-  }, [router]);
-  return null;
+  redirect("/collections/home");
 }

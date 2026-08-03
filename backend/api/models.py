@@ -1,6 +1,52 @@
 from django.db import models
 import os
+from io import BytesIO
+
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.text import slugify
+from PIL import Image as PILImage, ImageOps, UnidentifiedImageError
+
+# Uploads were previously stored exactly as received, which put multi-megabyte
+# camera images and screenshots straight onto the page. Anything Pillow can
+# decode as a still raster image is downscaled and re-encoded as WebP on the way
+# in; everything else (video, SVG, animated GIF) is stored untouched.
+MAX_IMAGE_DIMENSION = 2000
+WEBP_QUALITY = 82
+COMPRESSIBLE_FORMATS = {"JPEG", "PNG", "BMP", "TIFF", "MPO", "WEBP"}
+
+
+def compress_upload_to_webp(uploaded_file):
+    """Downscale and re-encode a still raster upload as WebP.
+
+    Returns a ContentFile, or None when the upload is not a still raster image
+    and should be stored as-is.
+    """
+    try:
+        uploaded_file.seek(0)
+        PILImage.open(uploaded_file).verify()  # verify() consumes the handle
+        uploaded_file.seek(0)
+        image = PILImage.open(uploaded_file)
+    except (UnidentifiedImageError, OSError, ValueError):
+        return None
+
+    if image.format not in COMPRESSIBLE_FORMATS or getattr(image, "is_animated", False):
+        return None
+
+    image = ImageOps.exif_transpose(image)
+
+    if max(image.size) > MAX_IMAGE_DIMENSION:
+        image.thumbnail((MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION), PILImage.LANCZOS)
+
+    has_alpha = image.mode in ("RGBA", "LA") or (
+        image.mode == "P" and "transparency" in image.info
+    )
+    image = image.convert("RGBA" if has_alpha else "RGB")
+
+    buffer = BytesIO()
+    image.save(buffer, format="WEBP", quality=WEBP_QUALITY, method=6)
+    return ContentFile(buffer.getvalue())
+
 
 # Create your models here.
 
@@ -150,19 +196,41 @@ class UploadedImage(models.Model):
         return f"{self.image.name} - {self.category}"
         
     def save(self, *args, **kwargs):
-        # Ensure the filename is not too long
-        base_filename, ext = os.path.splitext(self.image.name)
-        max_filename_length = 100  # Maximum allowed length for filename
+        # Renaming only ever applies to a file being uploaded right now. Reading
+        # `_file`/`_committed` directly avoids `.file`, which lazily opens the
+        # stored file and raises when a row's media is missing from disk. And
+        # re-saving an existing row must leave its stored path alone — slugify
+        # strips the directory separators, so running it over an already-stored
+        # path corrupts the reference.
+        pending_upload = (
+            getattr(self.image, "_file", None)
+            if self.image and not getattr(self.image, "_committed", True)
+            else None
+        )
 
-        # Truncate filename if it's too long
-        if len(base_filename) > max_filename_length:
-            base_filename = base_filename[:max_filename_length]
+        if pending_upload is not None:
+            # Ensure the filename is not too long
+            base_filename, ext = os.path.splitext(os.path.basename(self.image.name))
+            max_filename_length = 100  # Maximum allowed length for filename
 
-        # Generate a safe filename
-        new_filename = f"{slugify(base_filename)}{ext}"
+            # Truncate filename if it's too long
+            if len(base_filename) > max_filename_length:
+                base_filename = base_filename[:max_filename_length]
 
-        # Update the image name with the new filename
-        self.image.name = f"uploaded_images/{new_filename}"
+            compressed = (
+                compress_upload_to_webp(pending_upload)
+                if isinstance(pending_upload, UploadedFile)
+                else None
+            )
+
+            if compressed is not None:
+                # Let the storage backend apply upload_to and resolve collisions.
+                self.image.save(
+                    f"{slugify(base_filename)}.webp", compressed, save=False
+                )
+            else:
+                # Not a still image (video, SVG, animated GIF): store as received.
+                self.image.name = f"uploaded_images/{slugify(base_filename)}{ext}"
 
         super().save(*args, **kwargs)
 

@@ -1,10 +1,12 @@
 import os
 import json
+from django.conf import settings
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.utils.decorators import method_decorator
+from django.utils.http import http_date
+from contact.authentication import CookieTokenAuthentication
 from .models import *
 # Utility functions
 
@@ -70,17 +72,66 @@ def write_to_db(model_name, data):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class JsonDBView(View):
+    """
+    Base class for every CMS content endpoint (home/cards, home/service,
+    layout/footer, hero, etc. — see api/urls.py for the full list).
+
+    `get` is intentionally left open: this content is exactly what public
+    pages render, so it must be readable by anyone. `patch`/`put` are what
+    actually change the site's content, though, and previously had NO
+    authentication check at all here — any anonymous request from anywhere
+    could rewrite any of these endpoints. Both now require the same
+    cookie-based session as the rest of the admin tooling.
+    """
+
     model_name = None  # Override this in subclasses
+
+    def _authenticate_or_401(self, request):
+        result = CookieTokenAuthentication().authenticate(request)
+        if result is None:
+            return JsonResponse(
+                {"error": "Authentication credentials were not provided."},
+                status=401,
+            )
+        request.user, request.auth = result
+        return None
 
     def get(self, request):
         try:
             component = ComponentData.objects.get(name=self.model_name)
             data = component.data
-            return JsonResponse(data, safe=False)
+            response = JsonResponse(data, safe=False)
         except ComponentData.DoesNotExist:
+            # Missing content is a real 404 and must not be cached, or a
+            # component created later would stay invisible until the TTL lapsed.
             return JsonResponse({"error": f"{self.model_name} does not exist in the database"}, status=404)
 
+        # This content only changes when an admin saves an edit, but every
+        # visitor's render used to hit Django for it. `stale-while-revalidate`
+        # lets a CDN or the Next.js server keep serving instantly while it
+        # refreshes in the background.
+        response["Cache-Control"] = (
+            f"public, max-age={settings.API_CACHE_MAX_AGE}, "
+            f"s-maxage={settings.API_CACHE_SHARED_MAX_AGE}, "
+            f"stale-while-revalidate={settings.API_CACHE_SHARED_MAX_AGE * 2}"
+        )
+        # Responses vary by request origin because CORS headers are attached.
+        response["Vary"] = "Origin"
+
+        # Expose the real edit time as a header rather than folding it into the
+        # JSON body, which is returned to clients verbatim as page content.
+        # The sitemap uses this for an honest <lastmod>; without it every URL
+        # claims to have changed at build time, which crawlers discount.
+        if component.updated_at:
+            response["Last-Modified"] = http_date(component.updated_at.timestamp())
+
+        return response
+
     def patch(self, request):
+        auth_error = self._authenticate_or_401(request)
+        if auth_error:
+            return auth_error
+
         updated_data = json.loads(request.body)
         try:
             component = ComponentData.objects.get(name=self.model_name)
@@ -99,6 +150,10 @@ class JsonDBView(View):
             return JsonResponse({"error": f"{self.model_name} does not exist in the database"}, status=404)
 
     def put(self, request):
+        auth_error = self._authenticate_or_401(request)
+        if auth_error:
+            return auth_error
+
         new_data = json.loads(request.body)
         write_to_db(self.model_name, new_data)
         return JsonResponse(new_data, safe=False)
@@ -553,6 +608,7 @@ def handle_file_upload(file):
 
 
 from rest_framework.generics import ListCreateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import UploadedImage
 from .serializers import UploadedImageSerializer
 
@@ -560,9 +616,22 @@ class UploadedImageViewSet(ListCreateAPIView):
     queryset = UploadedImage.objects.all()
     serializer_class = UploadedImageSerializer
 
+    def get_permissions(self):
+        # Listing is public (these URLs end up embedded in public pages
+        # anyway); uploading a new one is an admin-only write and previously
+        # had no auth check at all.
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
 class RetrieveImage(generics.RetrieveUpdateDestroyAPIView):
     queryset = UploadedImage.objects.all()
     serializer_class = UploadedImageSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
 
 from django.http import JsonResponse

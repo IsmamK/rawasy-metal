@@ -5,9 +5,13 @@
 // strings at runtime. Data is fetched from /home/cards/.
 
 import { useMemo, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { FaChevronRight } from "react-icons/fa";
+import Link from "next/link";
+import { productSlug } from "@/lib/collectionsData";
+import { FaChevronRight, FaWhatsapp } from "react-icons/fa";
+import useEditableContent from "@/hooks/useEditableContent";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import {
   FiStar,
   FiX,
@@ -19,6 +23,7 @@ import {
   FiUpload,
 } from "react-icons/fi";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_DATA = {
   whatsappNumber: "971547219791",
@@ -35,7 +40,10 @@ const DEFAULT_DATA = {
       whatsappDefaultMessage:
         "Hello, I would like to know more about your curtain collections.",
       whatsappProductMessagePrefix:
-        "Hello, I need help choosing this product:",
+        "Hello, I would like a quotation for this curtain:",
+      // Label on the per-product WhatsApp button. This site is a catalogue, not
+      // a shop — the button replaces what used to be a price.
+      whatsappCta: "WhatsApp",
       categories: [
         { key: "home", label: "Home" },
         { key: "office", label: "Office" },
@@ -47,7 +55,6 @@ const DEFAULT_DATA = {
           id: 1,
           key: "luxuryVelvetCurtain1",
           name: "Luxury Velvet Curtain",
-          price: 4500,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -59,7 +66,6 @@ const DEFAULT_DATA = {
           id: 2,
           key: "minimalSheerCurtain1",
           name: "Minimal Sheer Curtain",
-          price: 1800,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -71,7 +77,6 @@ const DEFAULT_DATA = {
           id: 9,
           key: "luxuryVelvetCurtain2",
           name: "Luxury Velvet Curtain",
-          price: 4500,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -83,7 +88,6 @@ const DEFAULT_DATA = {
           id: 10,
           key: "minimalSheerCurtain2",
           name: "Minimal Sheer Curtain",
-          price: 1800,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -95,7 +99,6 @@ const DEFAULT_DATA = {
           id: 11,
           key: "luxuryVelvetCurtain3",
           name: "Luxury Velvet Curtain",
-          price: 4500,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -107,7 +110,6 @@ const DEFAULT_DATA = {
           id: 12,
           key: "minimalSheerCurtain3",
           name: "Minimal Sheer Curtain",
-          price: 1800,
           image: "/curtain_home.png",
           category: "home",
           description:
@@ -119,7 +121,6 @@ const DEFAULT_DATA = {
           id: 3,
           key: "premiumOfficeBlind",
           name: "Premium Office Blind",
-          price: 3200,
           image: "/curtain_office.png",
           category: "office",
           description:
@@ -131,7 +132,6 @@ const DEFAULT_DATA = {
           id: 4,
           key: "executiveOfficeCurtain",
           name: "Executive Office Curtain",
-          price: 5200,
           image: "/curtain_office.png",
           category: "office",
           description:
@@ -143,7 +143,6 @@ const DEFAULT_DATA = {
           id: 5,
           key: "hospitalPrivacyCurtain",
           name: "Hospital Privacy Curtain",
-          price: 2600,
           image: "/curtain_medical.png",
           category: "medical-clinic",
           description:
@@ -155,7 +154,6 @@ const DEFAULT_DATA = {
           id: 6,
           key: "clinicDividerCurtain",
           name: "Clinic Divider Curtain",
-          price: 2100,
           image: "/curtain_medical.png",
           category: "medical-clinic",
           description:
@@ -167,7 +165,6 @@ const DEFAULT_DATA = {
           id: 7,
           key: "industrialHeatResistantCurtain",
           name: "Industrial Heat Resistant Curtain",
-          price: 7900,
           image: "/curtain_industry.png",
           category: "accessories",
           description:
@@ -179,7 +176,6 @@ const DEFAULT_DATA = {
           id: 8,
           key: "warehousePartitionCurtain",
           name: "Warehouse Partition Curtain",
-          price: 6400,
           image: "/curtain_industry.png",
           category: "accessories",
           description:
@@ -197,17 +193,29 @@ const cloneData = (data) => JSON.parse(JSON.stringify(data));
 const normalizeData = (apiData) => {
   if (!apiData || typeof apiData !== "object") return DEFAULT_DATA;
 
-  return {
-    ...DEFAULT_DATA,
-    ...apiData,
-    translations: {
-      ...DEFAULT_DATA.translations,
-      ...(apiData.translations || {}),
-    },
-  };
-};
+  const apiTranslations = apiData.translations || {};
 
-const formatPrice = (n) => `৳${Number(n || 0).toLocaleString("en-BD")}`;
+  // Merge language-by-language rather than replacing each block wholesale.
+  // Stored content predates any key added to DEFAULT_DATA later, so a shallow
+  // top-level merge would drop new labels (e.g. `whatsappCta`) and render empty
+  // buttons. Per-language spread keeps API arrays authoritative — `products`
+  // and `categories` still replace the defaults — while letting new string keys
+  // fall back. Languages the API knows about but the defaults do not are kept.
+  const languages = new Set([
+    ...Object.keys(DEFAULT_DATA.translations),
+    ...Object.keys(apiTranslations),
+  ]);
+
+  const translations = {};
+  for (const language of languages) {
+    translations[language] = {
+      ...(DEFAULT_DATA.translations[language] || DEFAULT_DATA.translations.EN),
+      ...(apiTranslations[language] || {}),
+    };
+  }
+
+  return { ...DEFAULT_DATA, ...apiData, translations };
+};
 
 const readJsonOrFallback = async (response, fallback) => {
   try {
@@ -218,22 +226,45 @@ const readJsonOrFallback = async (response, fallback) => {
   }
 };
 
+/**
+ * Busts the server's cached `/home/cards/` fetch (see
+ * `lib/collectionsData.js`'s `tags: ["collections-content"]`) right after a
+ * save. Without this, a category or product added just now can stay invisible
+ * to the next server-rendered navigation for up to the fetch's 5-minute
+ * revalidate window — which is what made "add category" look like it
+ * randomly failed and then started working again later.
+ */
+const revalidateCollectionsContent = async () => {
+  try {
+    await fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag: "collections-content" }),
+    });
+  } catch (error) {
+    console.error("Error revalidating collections content:", error);
+  }
+};
+
 export default function CollectionsCategoryClient({
   categoryKey,
   categories: fallbackCategories = [],
   products: fallbackProducts = [],
+  // Raw /home/cards/ payload fetched on the server. Lets the catalogue render
+  // into the server HTML so crawlers see the products, rather than an empty
+  // grid that only fills in after hydration.
+  initialContent = null,
 }) {
   const { lang } = useLanguage();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const queryCategoryKey = searchParams.get("category");
-  const requestedCategoryKey = queryCategoryKey || categoryKey;
+  // Every category now uses its own clean path:
+  // /collections/home
+  // /collections/medical-clinic
+  // /collections/category-123
+  const requestedCategoryKey = categoryKey;
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState({});
@@ -246,74 +277,37 @@ export default function CollectionsCategoryClient({
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const ENDPOINT = `${apiUrl}/home/cards/`;
 
-  const staticRouteKeys = useMemo(() => {
-    const keys = fallbackCategories.map((c) => c.key);
+  // Seeded from the static product/category lists the server component passes
+  // down, so a failed request still renders a populated page.
+  const buildFallback = () => {
+    const fallbackData = cloneData(DEFAULT_DATA);
 
-    if (keys.length === 0) {
-      return ["home", "office", "medical-clinic", "accessories"];
+    if (fallbackCategories.length > 0) {
+      fallbackData.translations.EN.categories = fallbackCategories.map((c) => ({
+        key: c.key,
+        label: c.key
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase()),
+      }));
     }
 
-    return keys;
-  }, [fallbackCategories]);
+    if (fallbackProducts.length > 0) {
+      fallbackData.translations.EN.products = fallbackProducts.map((p) => ({
+        ...p,
+        key: `product${p.id}`,
+        description: DEFAULT_DATA.translations.EN.productDescriptionFallback,
+        rating: 4.7,
+        reviews: 250,
+      }));
+    }
 
-  const baseStaticRouteKey = staticRouteKeys.includes(categoryKey)
-    ? categoryKey
-    : "home";
+    return fallbackData;
+  };
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchCardsData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch collections cards data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching collections cards data:", error);
-
-        const fallbackData = cloneData(DEFAULT_DATA);
-
-        if (fallbackCategories.length > 0) {
-          fallbackData.translations.EN.categories = fallbackCategories.map(
-            (c) => ({
-              key: c.key,
-              label: c.key
-                .replace(/-/g, " ")
-                .replace(/\b\w/g, (char) => char.toUpperCase()),
-            })
-          );
-        }
-
-        if (fallbackProducts.length > 0) {
-          fallbackData.translations.EN.products = fallbackProducts.map((p) => ({
-            ...p,
-            key: `product${p.id}`,
-            description: DEFAULT_DATA.translations.EN.productDescriptionFallback,
-            rating: 4.7,
-            reviews: 250,
-          }));
-        }
-
-        setData(fallbackData);
-        setTempData(fallbackData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCardsData();
-  }, [ENDPOINT, fallbackCategories, fallbackProducts]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    { normalize: normalizeData, buildFallback, initialContent }
+  );
 
   useEffect(() => {
     if (selectedProduct || fullScreenImage) {
@@ -342,41 +336,88 @@ export default function CollectionsCategoryClient({
     ? copy.products
     : DEFAULT_DATA.translations.EN.products;
 
+  // Deliberately checked against `data` (the last saved state), never
+  // `tempData`. Renaming the currently-open category's key mid-edit makes the
+  // *edited* list momentarily not contain the URL's key — that is expected and
+  // fine, not an invalid route. Checking the saved data means this guard only
+  // fires for a genuinely bad URL (deleted/mistyped category), and never
+  // interrupts an in-progress edit and drops you out of edit mode.
+  const savedCopy =
+    data?.translations?.[lang] ||
+    data?.translations?.EN ||
+    DEFAULT_DATA.translations.EN;
+
+  const savedCategories = Array.isArray(savedCopy.categories)
+    ? savedCopy.categories
+    : DEFAULT_DATA.translations.EN.categories;
+
+  // Resolved by POSITION in the saved list, not by matching the live key.
+  // Matching by key broke mid-rename: as soon as the key you were typing into
+  // no longer equalled the URL's (saved) key, this silently fell back to
+  // category 0 — which made that category's products look like they had
+  // vanished while you were still typing, even though nothing was lost.
+  //
+  // The fallback itself must never be a bare `0`. Right after saving a
+  // rename, `data` updates to the new key before the URL has caught up (the
+  // navigation below is still in flight), so this lookup briefly finds
+  // nothing — and defaulting to 0 flashed (or on a slow redirect, held
+  // steady on) category 0's ("home") products instead of the renamed
+  // category's. Remembering the last position that DID match and reusing it
+  // keeps this pointed at the right category through that gap.
+  const lastKnownCategoryIndexRef = useRef(0);
+
+  const activeCategoryIndex = useMemo(() => {
+    const index = savedCategories.findIndex(
+      (c) => c.key === requestedCategoryKey
+    );
+    if (index >= 0) {
+      lastKnownCategoryIndexRef.current = index;
+      return index;
+    }
+    return lastKnownCategoryIndexRef.current;
+  }, [savedCategories, requestedCategoryKey]);
+
   const activeCategory = useMemo(() => {
     return (
-      activeCategories.find((c) => c.key === requestedCategoryKey) ||
+      activeCategories[activeCategoryIndex] ||
       activeCategories[0] ||
       DEFAULT_DATA.translations.EN.categories[0]
     );
-  }, [activeCategories, requestedCategoryKey]);
+  }, [activeCategories, activeCategoryIndex]);
 
   const validCategory = useMemo(() => {
-    return activeCategories.some((c) => c.key === requestedCategoryKey);
-  }, [activeCategories, requestedCategoryKey]);
+    return savedCategories.some((c) => c.key === requestedCategoryKey);
+  }, [savedCategories, requestedCategoryKey]);
 
+  // The single place that ever redirects for an invalid URL. Previously
+  // `saveChanges` also issued its own `router.replace` to follow a rename,
+  // which raced this effect: both fired in the same tick (this one sees the
+  // URL is stale the instant `data` updates, before the other redirect's
+  // navigation has actually landed), and whichever completed last silently
+  // won — sometimes leaving you on /collections/home instead of the renamed
+  // category. Doing it only here, and following the category by its
+  // preserved position rather than defaulting straight to home, removes that
+  // race: a genuinely deleted/mistyped category still falls through to
+  // savedCategories[0], but a renamed one is followed to its real new URL.
   useEffect(() => {
-    if (!isLoading && activeCategories.length > 0 && !validCategory) {
-      router.replace(`/collections/${baseStaticRouteKey}`);
-    }
+    if (editMode) return;
+    if (isLoading || savedCategories.length === 0 || validCategory) return;
+
+    const fallbackCategory =
+      savedCategories[activeCategoryIndex] || savedCategories[0];
+
+    router.replace(`/collections/${encodeURIComponent(fallbackCategory.key)}`);
   }, [
     isLoading,
     validCategory,
-    activeCategories,
+    savedCategories,
+    activeCategoryIndex,
+    editMode,
     router,
-    baseStaticRouteKey,
   ]);
 
   const goToCategory = (nextCategoryKey) => {
-    if (staticRouteKeys.includes(nextCategoryKey)) {
-      router.push(`/collections/${nextCategoryKey}`);
-      return;
-    }
-
-    router.push(
-      `/collections/${baseStaticRouteKey}?category=${encodeURIComponent(
-        nextCategoryKey
-      )}`
-    );
+    router.push(`/collections/${encodeURIComponent(nextCategoryKey)}`);
   };
 
   const categoryProducts = useMemo(() => {
@@ -391,7 +432,6 @@ export default function CollectionsCategoryClient({
       reviews: product.reviews ?? 250,
       phone: product.phone || `+${activeData.whatsappNumber || "971547219791"}`,
       bgGradient: "bg-gradient-to-br from-[#8f744e] to-[#b4a389]",
-      price: product.price,
     }));
   }, [
     categoryProducts,
@@ -442,11 +482,26 @@ export default function CollectionsCategoryClient({
       const newData = cloneData(prev);
       ensureCurrentLanguageExists(newData);
 
-      const oldKey = newData.translations[lang].categories[index]?.key;
+      const categories = newData.translations[lang].categories;
+      const oldKey = categories[index]?.key;
 
-      newData.translations[lang].categories[index][field] = value;
+      // Products are reassigned by matching this string against `oldKey` —
+      // safe only when `oldKey` belongs to exactly one category. If another
+      // category currently shares it (leftover duplicate data, or the key
+      // you're mid-typing has transiently collided with an unrelated
+      // category's key), that match can't tell the two apart and would
+      // silently steal the OTHER category's products. Skip the remap in that
+      // case — nothing moves for either category until this key is unique
+      // again, which is one keystroke away as you keep typing past the
+      // collision, rather than mixing their products together.
+      const oldKeyIsUnique =
+        field === "key" &&
+        oldKey !== undefined &&
+        categories.filter((c) => c.key === oldKey).length === 1;
 
-      if (field === "key" && oldKey) {
+      categories[index][field] = value;
+
+      if (field === "key" && oldKey && oldKeyIsUnique) {
         newData.translations[lang].products = newData.translations[
           lang
         ].products.map((product) =>
@@ -458,20 +513,57 @@ export default function CollectionsCategoryClient({
     });
   };
 
-  const addCategory = () => {
-    setTempData((prev) => {
-      const newData = cloneData(prev);
-      ensureCurrentLanguageExists(newData);
+  const addCategory = async () => {
+    if (!isAdmin) {
+      alert("Admin access required. Please log in.");
+      return;
+    }
 
-      const newKey = `category-${Date.now()}`;
+    const newKey = `category-${Date.now()}`;
 
-      newData.translations[lang].categories.push({
-        key: newKey,
-        label: "New Category",
+    const newData = cloneData(tempData);
+    ensureCurrentLanguageExists(newData);
+    newData.translations[lang].categories.push({
+      key: newKey,
+      label: "New Category",
+    });
+
+    // The category route this is about to navigate to fetches its own data
+    // from the server, so an in-memory-only update would not be there yet —
+    // the redirect-on-invalid-category effect would immediately bounce back
+    // to /collections/home. Persist first, then navigate once it is real.
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(newData),
       });
 
-      return newData;
-    });
+      if (!response.ok) {
+        throw new Error("Failed to save new category");
+      }
+
+      const updatedData = await readJsonOrFallback(response, newData);
+      const normalizedData = normalizeData(updatedData);
+
+      setData(normalizedData);
+      setTempData(normalizedData);
+      await revalidateCollectionsContent();
+
+      // Open the newly created category on its own clean URL so products
+      // can be added directly under it while edit mode remains enabled.
+      router.push(`/collections/${encodeURIComponent(newKey)}`);
+    } catch (error) {
+      console.error("Error adding category:", error);
+      alert("Failed to add category.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const removeCategory = (index) => {
@@ -510,7 +602,7 @@ export default function CollectionsCategoryClient({
           return product;
         }
 
-        if (field === "price" || field === "rating" || field === "reviews") {
+        if (field === "rating" || field === "reviews") {
           return {
             ...product,
             [field]: Number(value),
@@ -538,7 +630,6 @@ export default function CollectionsCategoryClient({
         id: newId,
         key: `product-${newId}`,
         name: "New Product",
-        price: 2500,
         image: "/curtain_home.png",
         category: activeCategory.key,
         description: "Product description goes here.",
@@ -574,9 +665,7 @@ export default function CollectionsCategoryClient({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required for image upload.");
       return;
     }
@@ -590,10 +679,8 @@ export default function CollectionsCategoryClient({
     try {
       const response = await fetch(`${apiUrl}/images/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -615,9 +702,7 @@ export default function CollectionsCategoryClient({
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -630,10 +715,24 @@ export default function CollectionsCategoryClient({
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
+      return;
+    }
+
+    // A duplicate key makes product reassignment ambiguous for as long as it
+    // exists (see handleCategoryChange), so it must never actually be saved —
+    // catch it here rather than let two categories silently share products.
+    const keyCounts = {};
+    for (const cat of tempData.translations[lang]?.categories || []) {
+      keyCounts[cat.key] = (keyCounts[cat.key] || 0) + 1;
+    }
+    const duplicateKey = Object.keys(keyCounts).find((key) => keyCounts[key] > 1);
+
+    if (duplicateKey) {
+      alert(
+        `Two categories both use the key "${duplicateKey}". Give each category a unique key before saving.`
+      );
       return;
     }
 
@@ -644,8 +743,8 @@ export default function CollectionsCategoryClient({
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
@@ -659,6 +758,13 @@ export default function CollectionsCategoryClient({
       setData(normalizedData);
       setTempData(normalizedData);
       setEditMode(false);
+      await revalidateCollectionsContent();
+
+      // If the category being viewed was renamed, its URL (still the old key)
+      // is now stale. The invalid-category effect above follows it to the new
+      // URL automatically once `editMode` flips to false — no separate
+      // redirect needed here (a second one racing that effect is what used to
+      // intermittently strand this on /collections/home instead).
 
       alert("Collections cards updated successfully!");
     } catch (error) {
@@ -721,7 +827,17 @@ export default function CollectionsCategoryClient({
 
   if (isLoading) {
     return (
-      <section className="bg-[#f3f0eb] min-h-screen pt-24 md:pt-28 pb-10">
+      <section
+        className="bg-[#f3f0eb] min-h-screen pb-10 relative"
+        style={{ paddingTop: "var(--navbar-h)" }}
+      >
+        <div
+          className="absolute top-0 left-0 right-0 bg-black bg-cover bg-center pointer-events-none"
+          style={{ backgroundImage: "url(/curtains-hero.png)", height: "var(--navbar-h)" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/80" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6">
           <div className="flex justify-center items-center py-28">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#8f744e]"></div>
@@ -733,8 +849,22 @@ export default function CollectionsCategoryClient({
 
   return (
     <>
-      <section className="bg-[#f3f0eb] min-h-screen pt-24 md:pt-28 pb-10 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6">
+      <section
+        className="bg-[#f3f0eb] min-h-screen pb-10 relative"
+        style={{ paddingTop: "var(--navbar-h)" }}
+      >
+        {/* Matches the dark backdrop behind the navbar on the home page hero,
+            so the fixed nav reads the same way across routes. Sized from the
+            navbar's own measured height (see Navbar.js) so it lines up with
+            zero gap regardless of viewport width or nav content wrapping. */}
+        <div
+          className="absolute top-0 left-0 right-0 bg-black bg-cover bg-center pointer-events-none"
+          style={{ backgroundImage: "url(/curtains-hero.png)", height: "var(--navbar-h)" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/80" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 mt-6 md:mt-8">
           {editMode && (
             <div className="mb-4 md:mb-5 text-center">
               <span className="inline-block bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold shadow">
@@ -906,7 +1036,7 @@ export default function CollectionsCategoryClient({
                       if (editMode) {
                         return (
                           <div
-                            key={`${cat.key}-${index}`}
+                            key={index}
                             className="relative bg-[#f3f0eb] rounded-xl p-3 border border-black/5"
                           >
                             <button
@@ -948,6 +1078,18 @@ export default function CollectionsCategoryClient({
                               }
                               className="w-full px-3 py-2 rounded-lg border border-black/10 text-sm outline-none focus:ring-2 focus:ring-[#8f744e]"
                             />
+
+                            <button
+                              type="button"
+                              onClick={() => goToCategory(cat.key)}
+                              className={`w-full mt-2 px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                                isActive
+                                  ? "bg-[#8f744e] text-white"
+                                  : "bg-white text-[#8f744e] border border-[#8f744e]/30 hover:bg-[#eee8df]"
+                              }`}
+                            >
+                              {isActive ? "Managing Products" : "Manage Products"}
+                            </button>
                           </div>
                         );
                       }
@@ -975,10 +1117,11 @@ export default function CollectionsCategoryClient({
                     {editMode && (
                       <button
                         onClick={addCategory}
-                        className="w-full rounded-xl border-2 border-dashed border-[#8f744e]/40 text-[#8f744e] py-3 flex items-center justify-center gap-2 hover:bg-[#f3f0eb] transition"
+                        disabled={isSaving}
+                        className="w-full rounded-xl border-2 border-dashed border-[#8f744e]/40 text-[#8f744e] py-3 flex items-center justify-center gap-2 hover:bg-[#f3f0eb] transition disabled:opacity-50"
                       >
                         <FiPlus />
-                        Add Category
+                        {isSaving ? "Adding..." : "Add Category"}
                       </button>
                     )}
                   </div>
@@ -1050,7 +1193,7 @@ export default function CollectionsCategoryClient({
                                 src={p.image}
                                 alt={p.name}
                                 fill
-                                unoptimized
+                                sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                                 className="object-cover"
                               />
                             )}
@@ -1150,21 +1293,7 @@ export default function CollectionsCategoryClient({
                                   ))}
                                 </select>
 
-                                <div className="grid grid-cols-3 gap-2">
-                                  <input
-                                    type="number"
-                                    value={p.price}
-                                    onChange={(e) =>
-                                      handleProductChange(
-                                        productKey,
-                                        "price",
-                                        e.target.value
-                                      )
-                                    }
-                                    className="w-full text-xs bg-white border border-black/10 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-[#8f744e]"
-                                    placeholder="Price"
-                                  />
-
+                                <div className="grid grid-cols-2 gap-2">
                                   <input
                                     type="number"
                                     step="0.1"
@@ -1197,8 +1326,20 @@ export default function CollectionsCategoryClient({
                               </div>
                             ) : (
                               <>
+                                {/* A real crawlable link to the product's own
+                                    page. The card's click-to-open-modal stays
+                                    for quick browsing, but without this anchor
+                                    the product routes would be orphans
+                                    reachable only via the sitemap. */}
                                 <h3 className="font-semibold text-[#2d3142] group-hover:text-[#8f744e] truncate">
-                                  {p.name}
+                                  <Link
+                                    href={`/collections/${activeCategory.key}/${productSlug(
+                                      p
+                                    )}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {p.name}
+                                  </Link>
                                 </h3>
 
                                 <div className="flex items-center mt-2 space-x-1">
@@ -1212,10 +1353,21 @@ export default function CollectionsCategoryClient({
                                   {p.description}
                                 </p>
 
-                                <div className="mt-3 flex items-center justify-between">
-                                  <span className="text-lg font-bold text-[#8f744e]">
-                                    {formatPrice(p.price)}
-                                  </span>
+                                <div className="mt-3">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      // The card itself opens the detail modal;
+                                      // this button must not trigger that too.
+                                      e.stopPropagation();
+                                      handleWhatsAppClick(p.name);
+                                    }}
+                                    aria-label={`${copy.whatsappCta} — ${p.name}`}
+                                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm rounded-lg text-white font-semibold bg-[#25D366] hover:bg-[#1ebe5b] transition"
+                                  >
+                                    <FaWhatsapp className="w-5 h-5" />
+                                    <span>{copy.whatsappCta}</span>
+                                  </button>
                                 </div>
                               </>
                             )}
@@ -1256,7 +1408,7 @@ export default function CollectionsCategoryClient({
                 src={selectedProduct.image}
                 alt={selectedProduct.name}
                 fill
-                unoptimized
+                sizes="(max-width: 640px) 100vw, 512px"
                 className="object-cover cursor-pointer"
                 onClick={(e) =>
                   handleImageClickInModal(selectedProduct.image, e)
@@ -1296,22 +1448,23 @@ export default function CollectionsCategoryClient({
                 {selectedProduct.description}
               </p>
 
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-[#8f744e]">
-                  {formatPrice(selectedProduct.price)}
-                </span>
+              <button
+                onClick={() => handleWhatsAppClick(selectedProduct.name)}
+                aria-label={`${copy.whatsappCta} — ${selectedProduct.name}`}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm rounded-lg text-white font-semibold bg-[#25D366] hover:bg-[#1ebe5b] transition"
+              >
+                <FaWhatsapp className="w-5 h-5" />
+                <span>{copy.whatsappCta}</span>
+              </button>
 
-                <button
-                  onClick={() => handleWhatsAppClick(selectedProduct.name)}
-                  className="px-4 py-2 rounded-xl text-white font-semibold"
-                  style={{
-                    background: "linear-gradient(135deg, #8f744e, #b4a389)",
-                    boxShadow: "0 10px 30px rgba(143,116,78,0.3)",
-                  }}
-                >
-                  {copy.needHelp}
-                </button>
-              </div>
+              <Link
+                href={`/collections/${activeCategory.key}/${productSlug(
+                  selectedProduct
+                )}`}
+                className="mt-3 block text-center text-sm font-medium text-[#8f744e] hover:underline"
+              >
+                View full details
+              </Link>
             </div>
           </div>
         </div>
@@ -1328,7 +1481,7 @@ export default function CollectionsCategoryClient({
               src={fullScreenImage}
               alt="Product image"
               fill
-              unoptimized
+              sizes="(max-width: 896px) 100vw, 896px"
               className="object-contain"
             />
 
@@ -1341,6 +1494,8 @@ export default function CollectionsCategoryClient({
           </div>
         </div>
       )}
+
+      <FloatingWhatsApp />
     </>
   );
 }

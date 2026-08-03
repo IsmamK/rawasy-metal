@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
 import {
   FiEdit2,
   FiSave,
@@ -11,6 +14,19 @@ import {
   FiPlus,
   FiTrash2,
 } from "react-icons/fi";
+
+
+const OptimizedBackground = ({ src, priority = false }) => (
+  <Image
+    src={src}
+    alt=""
+    fill
+    priority={priority}
+    sizes="100vw"
+    className="object-cover object-center scale-105"
+    quality={75}
+  />
+);
 
 const DEFAULT_HERO_DATA = {
   backgroundImage: "/curtains-hero.png",
@@ -162,13 +178,10 @@ const normalizeApiData = (apiData) => {
   };
 };
 
-export default function Hero() {
+export default function Hero({ initialContent = null }) {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_HERO_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_HERO_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -178,36 +191,14 @@ export default function Hero() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const endpoint = `${apiUrl}/home/hero/`;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchHeroData = async () => {
-      try {
-        const response = await fetch(endpoint);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch hero data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeApiData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching hero data:", error);
-        setData(DEFAULT_HERO_DATA);
-        setTempData(DEFAULT_HERO_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHeroData();
-  }, [endpoint]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    endpoint,
+    {
+      normalize: normalizeApiData,
+      buildFallback: () => DEFAULT_HERO_DATA,
+      initialContent,
+    }
+  );
 
   const activeData = editMode ? tempData : data;
 
@@ -236,9 +227,7 @@ export default function Hero() {
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -351,9 +340,7 @@ export default function Hero() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required for image upload.");
       return;
     }
@@ -367,10 +354,8 @@ export default function Hero() {
     try {
       const response = await fetch(`${apiUrl}/images/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -396,9 +381,7 @@ export default function Hero() {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -410,8 +393,8 @@ export default function Hero() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
@@ -512,10 +495,9 @@ export default function Hero() {
       )}
 
       {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center scale-105"
-        style={{ backgroundImage: `url("${heroImage}")` }}
-      />
+      <div className="absolute inset-0">
+        <OptimizedBackground src={heroImage} priority />
+      </div>
 
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-black/85 via-black/60 to-black/80" />

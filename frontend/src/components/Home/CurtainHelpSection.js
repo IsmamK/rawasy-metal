@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import useEditableContent from "@/hooks/useEditableContent";
 import { Edit, Save, X } from "lucide-react";
 
 const DEFAULT_DATA = {
@@ -87,13 +89,10 @@ const normalizeData = (apiData) => {
  * It displays a translated heading, a call-to-action button linking to
  * WhatsApp and a descriptive card explaining how to select curtains.
  */
-export default function CurtainHelpSection() {
+export default function CurtainHelpSection({ initialContent = null }) {
   const { lang } = useLanguage();
 
-  const [data, setData] = useState(DEFAULT_DATA);
-  const [tempData, setTempData] = useState(DEFAULT_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAuthenticated: isAdmin } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -101,36 +100,14 @@ export default function CurtainHelpSection() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
   const ENDPOINT = `${apiUrl}/home/contact/`;
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    setIsAdmin(!!authToken);
-  }, []);
-
-  useEffect(() => {
-    const fetchHelpData = async () => {
-      try {
-        const response = await fetch(ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch curtain help data");
-        }
-
-        const jsonData = await response.json();
-        const normalizedData = normalizeData(jsonData);
-
-        setData(normalizedData);
-        setTempData(normalizedData);
-      } catch (error) {
-        console.error("Error fetching curtain help data:", error);
-        setData(DEFAULT_DATA);
-        setTempData(DEFAULT_DATA);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHelpData();
-  }, [ENDPOINT]);
+  const { data, setData, tempData, setTempData, isLoading } = useEditableContent(
+    ENDPOINT,
+    {
+      normalize: normalizeData,
+      buildFallback: () => DEFAULT_DATA,
+      initialContent,
+    }
+  );
 
   const activeData = editMode ? tempData : data;
 
@@ -174,9 +151,7 @@ export default function CurtainHelpSection() {
   };
 
   const toggleEditMode = () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Admin access required. Please log in.");
       return;
     }
@@ -205,9 +180,7 @@ export default function CurtainHelpSection() {
   };
 
   const saveChanges = async () => {
-    const authToken = localStorage.getItem("authToken");
-
-    if (!authToken) {
+    if (!isAdmin) {
       alert("Authentication required to save changes.");
       return;
     }
@@ -219,8 +192,8 @@ export default function CurtainHelpSection() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
+        credentials: "include",
         body: JSON.stringify(tempData),
       });
 
