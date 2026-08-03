@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -290,6 +290,17 @@ const DEFAULT_DATA = {
 
 const cloneData = (data) => JSON.parse(JSON.stringify(data));
 
+// How many collection cards the homepage section shows before a "See All"
+// reveal is needed. Kept as a client-side cursor (an index into the already
+// fetched collections array) rather than a real paginated request: the
+// collections list is delivered as part of the single `home/service` content
+// blob (see `useEditableContent`/`ENDPOINT` below), not as a separate list
+// endpoint, so there is nothing to page through on the server — the whole
+// array is already in memory the moment the section renders. Slicing it
+// client-side means "See All" reveals instantly with no spinner and no
+// network round trip.
+const VISIBLE_STEP = 8;
+
 /**
  * The "Link / Href" field is free text, so a value like "office" (a category
  * key, not a path) silently broke navigation: `next/link` resolves a href
@@ -377,6 +388,26 @@ export default function CollectionsSection({ initialContent = null }) {
 
   const activeCollections =
     activeContent?.collections || DEFAULT_DATA.translations.EN.collections;
+
+  // "Cursor" into the collections array — how many cards are currently
+  // shown. Reset to the first page whenever the underlying list changes
+  // (language switch, admin edit, save) so a shorter list can't leave the
+  // cursor pointing past the end.
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP);
+  const collectionsKey = activeCollections
+    .map((c) => c.key)
+    .join("|");
+
+  useEffect(() => {
+    setVisibleCount(VISIBLE_STEP);
+  }, [collectionsKey, lang]);
+
+  const displayedCollections = editMode
+    ? activeCollections
+    : activeCollections.slice(0, visibleCount);
+
+  const hasMoreCollections =
+    !editMode && activeCollections.length > visibleCount;
 
   const ensureCurrentLanguageExists = (newData) => {
     if (!newData.translations) {
@@ -641,7 +672,7 @@ export default function CollectionsSection({ initialContent = null }) {
 
         {/* Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {activeCollections.map((item, index) => {
+          {displayedCollections.map((item, index) => {
             const imageUploading = uploadingMedia[`${index}-image`];
             const videoUploading = uploadingMedia[`${index}-video`];
 
@@ -839,6 +870,17 @@ export default function CollectionsSection({ initialContent = null }) {
             </button>
           )}
         </div>
+
+        {hasMoreCollections && (
+          <div className="flex justify-center mt-12">
+            <Link
+              href="/collections/all"
+              className="group relative overflow-hidden rounded-full border border-[#D4AF37]/50 bg-black/30 px-8 py-3 text-sm font-semibold tracking-wide text-[#F5D76E] transition-all duration-300 hover:bg-[#D4AF37] hover:text-black hover:shadow-[0_10px_30px_rgba(212,175,55,0.35)]"
+            >
+              See All Collections
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

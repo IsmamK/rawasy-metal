@@ -40,3 +40,31 @@ export async function getServerContent(path) {
     return null;
   }
 }
+
+/**
+ * Server-side read of one cursor-paginated page of the homepage's curtain
+ * collections (see backend/api/views.py's `HomeServiceCollectionsView`).
+ * Used to render the first page of `/collections/all` in the server HTML —
+ * the client component only takes over for pages loaded past that via
+ * scroll — rather than shipping a client-only fetch that leaves the initial
+ * page blank until hydration.
+ */
+export async function getCollectionsPage({ lang = "EN", cursor = null, pageSize = 16 } = {}) {
+  const params = new URLSearchParams({ lang, page_size: String(pageSize) });
+  if (cursor) params.set("cursor", cursor);
+
+  const url = `${API_URL}/home/service/collections/?${params.toString()}`;
+
+  try {
+    const response = await fetch(url, {
+      // Same content the homepage widget reads, so it shares the same
+      // revalidate window and cache tag — an admin save busts both together.
+      next: { revalidate: 300, tags: ["content:home/service/"] },
+    });
+
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}

@@ -43,6 +43,7 @@ urlpatterns = [
     path('home/CallToAction/', Contact.as_view(), name='contact'),
     path('home/client-logos/', ClietLogos.as_view(), name='client_logos'),
     path('home/service/', HomeService.as_view(), name='home-service'),
+    path('home/service/collections/', HomeServiceCollectionsView.as_view(), name='home-service-collections'),
 
     path('home/industry/', IndustriesView.as_view(), name='news'),
     path('home/contact/', ContactView.as_view(), name='contact'),

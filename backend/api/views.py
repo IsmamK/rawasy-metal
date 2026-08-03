@@ -1,5 +1,6 @@
 import os
 import json
+import base64
 from django.conf import settings
 from django.http import JsonResponse
 from django.views import View
@@ -181,6 +182,72 @@ class ProfessionalTrainingView(JsonDBView):
 
 class HomeService(JsonDBView):
     model_name = 'home-service'
+
+
+class HomeServiceCollectionsView(View):
+    """
+    Cursor-paginated read of the `collections` array that lives inside the
+    `home-service` ComponentData blob. The homepage widget and its admin
+    editor still read/write that blob whole through `HomeService` above —
+    this view only adds a paged way to read the same array for the
+    "See All" collections page, so it can request more without the client
+    ever having the full list (and every translation) in memory up front.
+
+    The cursor is an opaque base64 token wrapping an integer offset, so a
+    client only ever passes back what this endpoint gave it rather than
+    constructing offsets itself.
+    """
+
+    def get(self, request):
+        lang = request.GET.get('lang') or 'EN'
+
+        try:
+            page_size = int(request.GET.get('page_size', 8))
+        except (TypeError, ValueError):
+            page_size = 8
+        page_size = max(1, min(page_size, 48))
+
+        offset = 0
+        cursor_param = request.GET.get('cursor')
+        if cursor_param:
+            try:
+                offset = int(base64.urlsafe_b64decode(cursor_param.encode()).decode())
+            except (ValueError, TypeError, UnicodeDecodeError, base64.binascii.Error):
+                offset = 0
+        offset = max(0, offset)
+
+        try:
+            component = ComponentData.objects.get(name='home-service')
+            data = component.data or {}
+        except ComponentData.DoesNotExist:
+            data = {}
+
+        translations = data.get('translations', {}) if isinstance(data, dict) else {}
+        lang_block = translations.get(lang) or translations.get('EN') or {}
+        collections = lang_block.get('collections')
+        if not isinstance(collections, list):
+            collections = []
+
+        total = len(collections)
+        page_items = collections[offset:offset + page_size]
+
+        next_offset = offset + page_size
+        next_cursor = None
+        if next_offset < total:
+            next_cursor = base64.urlsafe_b64encode(str(next_offset).encode()).decode()
+
+        response = JsonResponse({
+            'results': page_items,
+            'next_cursor': next_cursor,
+            'count': total,
+        })
+        response["Cache-Control"] = (
+            f"public, max-age={settings.API_CACHE_MAX_AGE}, "
+            f"s-maxage={settings.API_CACHE_SHARED_MAX_AGE}, "
+            f"stale-while-revalidate={settings.API_CACHE_SHARED_MAX_AGE * 2}"
+        )
+        response["Vary"] = "Origin"
+        return response
 
 class NewView(JsonDBView):
     model_name = 'new_component'
